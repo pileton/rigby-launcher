@@ -1,9 +1,9 @@
 name: Build Windows EXE
 
 on:
-  push:
-    tags:
-      - "release*"
+  release:
+    types: [published, edited]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -27,8 +27,9 @@ jobs:
         run: |
           pyinstaller --onefile --windowed --name RigbyLauncher --add-data "rigby_launcher;rigby_launcher" rigby_launcher\__main__.py
 
-      - name: Create Release
+      - name: Upload EXE to Release
         uses: softprops/action-gh-release@v2
         with:
           files: dist\RigbyLauncher.exe
-          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
