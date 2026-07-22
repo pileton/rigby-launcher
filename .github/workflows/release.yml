@@ -1,4 +1,4 @@
-name: Build All Packages
+name: Build Packages
 
 on:
   release:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag to upload to (e.g. release1.0.0)"
+        description: "Release tag to upload to"
         required: true
 
 permissions:
@@ -31,11 +31,13 @@ jobs:
         run: |
           pyinstaller --onefile --windowed --name RigbyLauncher --add-data "rigby_launcher;rigby_launcher" rigby_launcher\__main__.py
 
-      - name: Upload EXE
-        uses: actions/upload-artifact@v4
+      - name: Upload EXE to Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: windows-exe
-          path: dist\RigbyLauncher.exe
+          files: dist\RigbyLauncher.exe
+          tag_name: ${{ github.event.inputs.tag || github.event.release.tag_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   deb:
     runs-on: ubuntu-latest
@@ -84,78 +86,10 @@ jobs:
           ar rcs "$GITHUB_WORKSPACE/${NAME}_${VERSION}_all.deb" debian-binary control.tar.gz data.tar.gz
           rm -rf "$BUILD"
 
-      - name: Upload .deb
-        uses: actions/upload-artifact@v4
-        with:
-          name: deb-package
-          path: rigby-launcher_*.deb
-
-  arch:
-    runs-on: ubuntu-latest
-    container:
-      image: archlinux:latest
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          path: .
-
-      - name: Install build deps
-        run: |
-          pacman -Syu --noconfirm base-devel fakeroot
-
-      - name: Debug checkout
-        run: |
-          echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
-          echo "PWD=$PWD"
-          ls -la "$PWD"
-          ls -la "$GITHUB_WORKSPACE" 2>/dev/null || echo "GITHUB_WORKSPACE not found"
-
-      - name: Build .pkg.tar.xz
-        run: |
-          cd "$GITHUB_WORKSPACE" || cd "$PWD"
-          echo "Now in: $PWD"
-          ls -la PKGBUILD
-          NAME="rigby-launcher"
-          VERSION="${GITHUB_REF_NAME#release}"
-          [ -z "$VERSION" ] && VERSION="1.0.0"
-          tar czf "$NAME-$VERSION.tar.gz" \
-            --transform "s,^,$NAME-$VERSION/," \
-            --exclude=.git --exclude=__pycache__ \
-            rigby_launcher PKGBUILD LICENSE
-          rm -rf src pkg
-          PKGEXT='.pkg.tar.xz' makepkg -f --noconfirm
-          ls -la *.pkg.tar.xz
-
-      - name: Upload Arch package
-        uses: actions/upload-artifact@v4
-        with:
-          name: arch-package
-          path: rigby-launcher-*.pkg.tar.xz
-
-  publish:
-    needs: [windows, deb, arch]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: windows-exe
-      - uses: actions/download-artifact@v4
-        with:
-          name: deb-package
-      - uses: actions/download-artifact@v4
-        with:
-          name: arch-package
-
-      - name: Create Release
+      - name: Upload .deb to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            RigbyLauncher.exe
-            rigby-launcher_*.deb
-            rigby-launcher-*.pkg.tar.xz
+          files: rigby-launcher_*.deb
           tag_name: ${{ github.event.inputs.tag || github.event.release.tag_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
