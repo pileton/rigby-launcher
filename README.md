@@ -19,7 +19,7 @@ Rigby Launcher a native launcher for Among Us on Linux (with Windows support). F
 ### Linux
 
 #### Arch Linux (PKGBUILD)
-
+(i recommend you build it yourself because arch builds get build last and may get released later than deb or .exe)
 ```bash
 git clone https://github.com/pileton/rigby-launcher
 cd rigby-launcher
