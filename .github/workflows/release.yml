@@ -4,6 +4,10 @@ on:
   release:
     types: [published, edited]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to upload to (e.g. release1.0.0)"
+        required: true
 
 permissions:
   contents: write
@@ -31,5 +35,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: dist\RigbyLauncher.exe
+          tag_name: ${{ github.event.inputs.tag || github.event.release.tag_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
