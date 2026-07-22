@@ -417,6 +417,13 @@ class APIHandler(BaseHTTPRequestHandler):
         if not os.path.exists(exe_path):
             return {"ok": False, "message": "Among Us.exe not found in game directory."}
 
+        if sys.platform == "win32":
+            try:
+                subprocess.Popen([exe_path], cwd=game_dir)
+                return {"ok": True, "message": "Game launched!"}
+            except Exception as e:
+                return {"ok": False, "message": str(e)}
+
         wine_bin = settings.get("wine_binary", "wine")
         wine_prefix = settings.get("wine_prefix", os.path.join(HOME, ".wine-au"))
 
