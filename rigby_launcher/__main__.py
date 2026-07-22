@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import sys
 import threading
 import time
@@ -6,9 +7,18 @@ from http.server import HTTPServer
 from rigby_launcher.server import APIHandler
 
 
+def _find_port(start):
+    for port in range(start, start + 100):
+        try:
+            s = HTTPServer(("127.0.0.1", port), APIHandler)
+            return port, s
+        except OSError:
+            continue
+    raise RuntimeError("no available port found")
+
+
 def main():
-    port = 8765
-    server = HTTPServer(("127.0.0.1", port), APIHandler)
+    port, server = _find_port(8765)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
 
