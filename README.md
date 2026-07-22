@@ -1,6 +1,6 @@
 # Rigby Launcher
 
-Rigby Launcher — a native launcher for Among Us on Linux (with Windows support via pywebview). Features game version management, automatic downloads, itch.io login fixer, and a glass-morphism UI with WebGL-animated background.
+Rigby Launcher a native launcher for Among Us on Linux (with Windows support via pywebview). Features game version management, automatic downloads, itch.io login fixer, and a glass-morphism UI with WebGL-animated background.
 
 ![Rigby Launcher](screenshot.png)
 
