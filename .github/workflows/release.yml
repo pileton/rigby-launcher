@@ -94,17 +94,30 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: archlinux:latest
-      options: --workdir /__w/rigby-launcher/rigby-launcher
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: .
 
       - name: Install build deps
         run: |
           pacman -Syu --noconfirm base-devel fakeroot
 
+      - name: Debug checkout
+        run: |
+          echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
+          echo "PWD=$PWD"
+          ls -la "$PWD"
+          ls -la "$GITHUB_WORKSPACE" 2>/dev/null || echo "GITHUB_WORKSPACE not found"
+
       - name: Build .pkg.tar.xz
         run: |
-          cd "$GITHUB_WORKSPACE"
+          cd "$GITHUB_WORKSPACE" || cd "$PWD"
+          echo "Now in: $PWD"
+          ls -la PKGBUILD
           NAME="rigby-launcher"
           VERSION="${GITHUB_REF_NAME#release}"
           [ -z "$VERSION" ] && VERSION="1.0.0"
@@ -114,7 +127,7 @@ jobs:
             rigby_launcher PKGBUILD LICENSE
           rm -rf src pkg
           PKGEXT='.pkg.tar.xz' makepkg -f --noconfirm
-          mv *.pkg.tar.xz "$GITHUB_WORKSPACE/"
+          ls -la *.pkg.tar.xz
 
       - name: Upload Arch package
         uses: actions/upload-artifact@v4
