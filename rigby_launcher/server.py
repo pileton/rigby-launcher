@@ -12,7 +12,7 @@ import time
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 HOME = os.path.expanduser("~")
-DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
+DATA_DIR = os.path.join(HOME, ".local", "share", "rigby-launcher", "data")
 SETTINGS_FILE = os.path.join(DATA_DIR, "settings.json")
 ITCH_CLIENT_ID = "1ba9b4bfa1ac7759e8420eed4ec863ba"
 OAUTH_PORT = 7890
