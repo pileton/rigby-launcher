@@ -1,4 +1,4 @@
-name: Build Windows EXE
+name: Build All Packages
 
 on:
   release:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag to upload to (e.g. release1.0.0)"
+        description: "Release tag to upload to"
         required: true
 
 permissions:
@@ -31,10 +31,116 @@ jobs:
         run: |
           pyinstaller --onefile --windowed --name RigbyLauncher --add-data "rigby_launcher;rigby_launcher" rigby_launcher\__main__.py
 
-      - name: Upload EXE to Release
+      - name: Upload EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-exe
+          path: dist\RigbyLauncher.exe
+
+  deb:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build .deb
+        run: |
+          NAME="rigby-launcher"
+          VERSION="${GITHUB_REF_NAME#release}"
+          [ -z "$VERSION" ] && VERSION="1.0.0"
+          BUILD="/tmp/deb-build"
+          mkdir -p "$BUILD/DEBIAN" "$BUILD/usr/bin" "$BUILD/usr/share/applications" "$BUILD/usr/share/$NAME"
+          cp -r rigby_launcher "$BUILD/usr/share/$NAME/"
+          cat > "$BUILD/DEBIAN/control" <<CONTROL
+          Package: $NAME
+          Version: $VERSION
+          Section: games
+          Priority: optional
+          Architecture: all
+          Depends: python3 (>= 3.8), python3-gi, python3-gi-cairo, gir1.2-webkit2-4.1, wine
+          Maintainer: pileton
+          Description: Rigby Launcher
+           Rigby Launcher - a launcher for Among Us with game version
+           management, auto-download, and itch.io login fixer.
+          CONTROL
+          cat > "$BUILD/usr/bin/$NAME" <<'SCRIPT'
+          #!/bin/sh
+          exec env PYTHONPATH="/usr/share/rigby-launcher:$PYTHONPATH" python3 -m rigby_launcher "$@"
+          SCRIPT
+          chmod +x "$BUILD/usr/bin/$NAME"
+          cat > "$BUILD/usr/share/applications/$NAME.desktop" <<DESKTOP
+          [Desktop Entry]
+          Name=Rigby Launcher
+          Comment=Launch and manage Among Us
+          Exec=$NAME
+          Icon=$NAME
+          Terminal=false
+          Type=Application
+          Categories=Game;
+          DESKTOP
+          cd "$BUILD"
+          tar czf control.tar.gz DEBIAN/ --owner=root --group=root
+          tar czf data.tar.gz usr/ --owner=root --group=root
+          echo "2.0" > debian-binary
+          ar rcs "$GITHUB_WORKSPACE/${NAME}_${VERSION}_all.deb" debian-binary control.tar.gz data.tar.gz
+          rm -rf "$BUILD"
+
+      - name: Upload .deb
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-package
+          path: rigby-launcher_*.deb
+
+  arch:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build deps
+        run: |
+          pacman -Syu --noconfirm base-devel fakeroot
+
+      - name: Build .pkg.tar.xz
+        run: |
+          NAME="rigby-launcher"
+          VERSION="${GITHUB_REF_NAME#release}"
+          [ -z "$VERSION" ] && VERSION="1.0.0"
+          tar czf "$NAME-$VERSION.tar.gz" \
+            --transform "s,^,$NAME-$VERSION/," \
+            --exclude=.git --exclude=__pycache__ \
+            rigby_launcher PKGBUILD LICENSE
+          rm -rf src pkg
+          PKGEXT='.pkg.tar.xz' makepkg -f --noconfirm
+          mv *.pkg.tar.xz "$GITHUB_WORKSPACE/"
+
+      - name: Upload Arch package
+        uses: actions/upload-artifact@v4
+        with:
+          name: arch-package
+          path: rigby-launcher-*.pkg.tar.xz
+
+  publish:
+    needs: [windows, deb, arch]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-exe
+      - uses: actions/download-artifact@v4
+        with:
+          name: deb-package
+      - uses: actions/download-artifact@v4
+        with:
+          name: arch-package
+
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist\RigbyLauncher.exe
+          files: |
+            RigbyLauncher.exe
+            rigby-launcher_*.deb
+            rigby-launcher-*.pkg.tar.xz
           tag_name: ${{ github.event.inputs.tag || github.event.release.tag_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
