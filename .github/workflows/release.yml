@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag to upload to"
+        description: "Release tag to upload to (e.g. release1.0.0)"
         required: true
 
 permissions:
@@ -94,6 +94,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: archlinux:latest
+      options: --workdir /__w/rigby-launcher/rigby-launcher
     steps:
       - uses: actions/checkout@v4
 
@@ -103,6 +104,7 @@ jobs:
 
       - name: Build .pkg.tar.xz
         run: |
+          cd "$GITHUB_WORKSPACE"
           NAME="rigby-launcher"
           VERSION="${GITHUB_REF_NAME#release}"
           [ -z "$VERSION" ] && VERSION="1.0.0"
