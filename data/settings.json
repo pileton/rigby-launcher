@@ -1,0 +1,13 @@
+{
+  "game_dir": "",
+  "wine_prefix": "",
+  "wine_binary": "wine",
+  "auto_download": true,
+  "auto_update": true,
+  "auto_launch": true,
+  "theme": "dark",
+  "launch_delay": 10,
+  "fixer_custom_dir": "",
+  "installed_version": "17.4I",
+  "fixer_done": false
+}
