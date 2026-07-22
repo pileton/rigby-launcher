@@ -1,0 +1,119 @@
+Rigby Launcher License
+Version 1.0, July 2026
+Copyright (c) 2024–2026 pileton
+
+TERMS AND CONDITIONS
+
+1. DEFINITIONS
+
+   "Software" means the Rigby Launcher source code, documentation,
+   and any accompanying materials, in whole or in part.
+
+   "You" (or "Your") means an individual or legal entity exercising
+   rights under this License.
+
+   "Distribution" means making the Software available to any third party,
+   whether by download, copy, network transfer, physical media, or any
+   other means.
+
+   "Derivative Work" means any modification, adaptation, improvement,
+   extension, or fork of the Software, in whole or in part, including
+   but not limited to merged copies with other software.
+
+   "Commercial Use" means any use of the Software or a Derivative Work
+   (a) for which You or a third party receives direct or indirect
+   compensation, payment, or financial benefit; (b) as part of a
+   product or service that is sold, licensed, or monetized; (c) in a
+   business, commercial, or revenue-generating context including but
+   not limited to paid support, consulting, or hosting.
+
+   "Non-Commercial Use" means any use that is not Commercial Use.
+
+2. GRANT OF LICENSE
+
+   Subject to the terms of this License, You are granted permission to
+   use, copy, modify, and distribute the Software for Non-Commercial
+   Use only.
+
+3. PERMISSIONS
+
+   You may:
+   a) Use the Software for personal, educational, or research purposes.
+   b) Modify the Software to create Derivative Works.
+   c) Distribute unmodified copies of the Software.
+   d) Distribute Derivative Works, provided all conditions in Section 4
+      and Section 5 are met.
+
+4. RESTRICTIONS
+
+   You may NOT:
+   a) Use the Software or any Derivative Work for Commercial Use.
+   b) Sell, resell, license, sublicense, rent, lease, or charge for
+      access to the Software or any Derivative Work, in whole or in
+      part.
+   c) Distribute the Software or any Derivative Work in closed-source
+      form. Complete corresponding source code must be included with
+      every distribution.
+   d) Apply any additional license terms to the Software or Derivative
+      Works that contradict, supersede, or add restrictions beyond
+      those in this License.
+   e) Use the Software or any Derivative Work in any manner that
+      violates applicable law.
+
+5. DISTRIBUTION RULES
+
+   If You distribute the Software or any Derivative Work, whether in
+   source or compiled form, You must:
+   a) Include a copy of this License with every copy distributed.
+   b) Provide complete corresponding source code for the Software and
+      any modifications, free of charge.
+   c) Retain all copyright notices, attribution notices, and
+      disclaimers present in the original Software.
+   d) Clearly mark all modifications, including identification of the
+      modifier and the date of each change.
+   e) Distribute any Derivative Work under the exact same terms as this
+      License, with no additional restrictions.
+
+6. ATTRIBUTION
+
+   You must preserve the following attribution in all copies and
+   Derivative Works:
+   a) A credit to the original author ("pileton") in the user interface,
+      about dialog, documentation, or README.
+   b) A link to the original source repository if it remains publicly
+      available.
+   c) This attribution must be reasonably prominent and may not be
+      removed or obscured.
+
+7. NO WARRANTY
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND
+   NON-INFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+   HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY,
+   WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM,
+   OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.
+
+8. LIMITATION OF LIABILITY
+
+   TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY SPECIAL, INCIDENTAL,
+   INDIRECT, OR CONSEQUENTIAL DAMAGES WHATSOEVER ARISING OUT OF THE USE
+   OR INABILITY TO USE THE SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+   OF SUCH DAMAGES.
+
+9. TERMINATION
+
+   This License automatically terminates if You fail to comply with any
+   of its terms. Upon termination, You must immediately cease all use
+   and distribution of the Software and destroy all copies in Your
+   possession. Sections 7, 8, and 10 survive termination.
+
+10. GOVERNING LAW
+
+    This License shall be governed by the laws of the Republic of
+    Cyprus, without regard to its conflict of law provisions.
+
+END OF TERMS AND CONDITIONS

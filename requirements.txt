@@ -1,0 +1,3 @@
+requests>=2.25.0
+pywebview>=4.0; sys_platform == "win32"
+PyGObject>=3.40; sys_platform == "linux"
