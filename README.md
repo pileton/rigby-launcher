@@ -4,6 +4,9 @@ Rigby Launcher a native launcher for Among Us on Linux (with Windows support). F
 
 credits go to jogamerforgames2021, without him this launcher wouldnt be possible
 
+also join our discord server 
+[![Discord](https://invidget.switchblade.xyz/MPzuWvg2BT?theme=dark)](https://discord.gg/MPzuWvg2BT)
+
 ![Rigby Launcher](screenshot.png)
 
 ## Features
