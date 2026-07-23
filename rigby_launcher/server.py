@@ -277,11 +277,17 @@ class APIHandler(BaseHTTPRequestHandler):
             return custom
         return detect_game_dir()
 
+    def _fixer_target_dir(self):
+        if sys.platform == "win32":
+            return os.path.join(os.environ.get("USERPROFILE", HOME),
+                                "AppData", "LocalLow", "Innersloth", "Among Us")
+        wine_prefix = settings.get("wine_prefix", "") or os.path.join(HOME, ".wine-au")
+        user = os.environ.get("USER", "user")
+        return os.path.join(wine_prefix, "drive_c", "users", user, "AppData", "LocalLow", "Innersloth", "Among Us")
+
     def _check_existing_fixer_token(self):
         candidates = []
-        wine_prefix = settings.get("wine_prefix", os.path.join(HOME, ".wine-au"))
-        user = os.environ.get("USER", "user")
-        appdata_itch = os.path.join(wine_prefix, "drive_c", "users", user, "AppData", "LocalLow", "Innersloth", "Among Us", "itch")
+        appdata_itch = os.path.join(self._fixer_target_dir(), "itch")
         if os.path.exists(appdata_itch):
             candidates.append(appdata_itch)
         game_dir = detect_game_dir()
@@ -336,9 +342,7 @@ class APIHandler(BaseHTTPRequestHandler):
             token = oauth.token
             if token:
                 self.__class__.fixer_status["token"] = token
-                wine_prefix = settings.get("wine_prefix", os.path.join(HOME, ".wine-au"))
-                user = os.environ.get("USER", "user")
-                target_dir = os.path.join(wine_prefix, "drive_c", "users", user, "AppData", "LocalLow", "Innersloth", "Among Us")
+                target_dir = self._fixer_target_dir()
                 os.makedirs(target_dir, exist_ok=True)
                 with open(os.path.join(target_dir, "itch"), "w") as f:
                     f.write(token)
