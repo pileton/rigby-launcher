@@ -70,16 +70,11 @@ settings = load_settings()
 def detect_game_dir():
     if settings["game_dir"] and os.path.exists(os.path.join(settings["game_dir"], "Among Us.exe")):
         return settings["game_dir"]
-    candidates = [
-        os.path.join(HOME, "Downloads", "app"),
-        os.path.join(HOME, ".wine-au", "drive_c", "Program Files (x86)", "Among Us"),
-        os.path.join(HOME, ".wine-au", "drive_c", "Among Us"),
-        os.path.join(HOME, "Games", "Among Us"),
-        os.path.join(HOME, ".local", "share", "among-us"),
-    ]
-    for d in candidates:
-        if os.path.exists(os.path.join(d, "Among Us.exe")):
-            return d
+    default = os.path.join(HOME, ".wine-au", "drive_c", "Program Files (x86)", "Among Us")
+    if os.path.exists(os.path.join(default, "Among Us.exe")):
+        settings["game_dir"] = default
+        save_settings(settings)
+        return default
     return ""
 
 
@@ -228,9 +223,7 @@ class APIHandler(BaseHTTPRequestHandler):
             self._send_json({"ok": True, "message": "Download started"})
 
         elif parsed.path == "/api/launch":
-            result = self._launch_game()
-            log(f"Launch: {result}")
-            self._send_json(result)
+            self._send_json(self._launch_game())
 
         elif parsed.path == "/api/fixer/login":
             if self.__class__.fixer_busy:
@@ -430,22 +423,17 @@ class APIHandler(BaseHTTPRequestHandler):
         env = {"WINEPREFIX": wine_prefix, "HOME": HOME,
                "USER": os.environ.get("USER", ""),
                "DISPLAY": os.environ.get("DISPLAY", ":0"),
-               "XDG_RUNTIME_DIR": os.environ.get("XDG_RUNTIME_DIR", "")}
+               "XAUTHORITY": os.environ.get("XAUTHORITY", os.path.join(HOME, ".Xauthority")),
+               "WAYLAND_DISPLAY": os.environ.get("WAYLAND_DISPLAY", ""),
+               "PATH": "/usr/local/bin:/usr/bin:/bin",
+               "DXVK_ASYNC": "1"}
 
         try:
-            wine_log = os.path.join(DATA_DIR, "wine-launch.log")
-            log(f"Launching: wine={wine_bin} exe={exe_path} cwd={game_dir}")
-            with open(wine_log, "a") as wl:
-                wl.write(f"\n[{time.strftime('%H:%M:%S')}] {wine_bin} {exe_path}\n")
-            p = subprocess.Popen([wine_bin, exe_path], cwd=game_dir, env=env,
-                                 stdout=subprocess.DEVNULL, stderr=open(wine_log, "a"))
-            log(f"Popen PID={p.pid}")
+            subprocess.Popen([wine_bin, exe_path], cwd=game_dir, env=env)
             return {"ok": True, "message": "Game launched!"}
         except FileNotFoundError:
-            log("Wine binary not found")
             return {"ok": False, "message": f"Wine not found at '{wine_bin}'. Install wine."}
         except Exception as e:
-            log(f"Launch error: {e}")
             return {"ok": False, "message": str(e)}
 
 
