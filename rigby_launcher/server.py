@@ -159,7 +159,7 @@ class APIHandler(BaseHTTPRequestHandler):
         if path == "/api/status":
             game_dir = detect_game_dir()
             game_installed = bool(game_dir and os.path.exists(os.path.join(game_dir, "Among Us.exe")))
-            wine_ok = bool(shutil.which("wine"))
+            wine_ok = sys.platform == "win32" or bool(shutil.which("wine"))
             self._check_existing_fixer_token()
             if latest_release_tag is None:
                 threading.Thread(target=self._check_latest_release, daemon=True).start()
@@ -229,6 +229,7 @@ class APIHandler(BaseHTTPRequestHandler):
 
         elif parsed.path == "/api/launch":
             result = self._launch_game()
+            log(f"Launch: {result}")
             self._send_json(result)
 
         elif parsed.path == "/api/fixer/login":
@@ -424,19 +425,38 @@ class APIHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 return {"ok": False, "message": str(e)}
 
-        wine_bin = settings.get("wine_binary", "wine")
-        wine_prefix = settings.get("wine_prefix", os.path.join(HOME, ".wine-au"))
+        wine_bin = settings.get("wine_binary", "") or "wine"
+        wine_prefix = settings.get("wine_prefix", "") or os.path.join(HOME, ".wine-au")
+        env = {"WINEPREFIX": wine_prefix, "HOME": HOME,
+               "USER": os.environ.get("USER", ""),
+               "DISPLAY": os.environ.get("DISPLAY", ":0"),
+               "XDG_RUNTIME_DIR": os.environ.get("XDG_RUNTIME_DIR", "")}
 
-        env = os.environ.copy()
-        env.pop("LD_PRELOAD", None)
-        env["WINEPREFIX"] = wine_prefix
         try:
-            subprocess.Popen([wine_bin, exe_path], cwd=game_dir, env=env)
+            wine_log = os.path.join(DATA_DIR, "wine-launch.log")
+            log(f"Launching: wine={wine_bin} exe={exe_path} cwd={game_dir}")
+            with open(wine_log, "a") as wl:
+                wl.write(f"\n[{time.strftime('%H:%M:%S')}] {wine_bin} {exe_path}\n")
+            p = subprocess.Popen([wine_bin, exe_path], cwd=game_dir, env=env,
+                                 stdout=subprocess.DEVNULL, stderr=open(wine_log, "a"))
+            log(f"Popen PID={p.pid}")
             return {"ok": True, "message": "Game launched!"}
         except FileNotFoundError:
+            log("Wine binary not found")
             return {"ok": False, "message": f"Wine not found at '{wine_bin}'. Install wine."}
         except Exception as e:
+            log(f"Launch error: {e}")
             return {"ok": False, "message": str(e)}
 
+
+LOG_FILE = os.path.join(DATA_DIR, "server.log")
+
+def log(msg):
+    try:
+        os.makedirs(DATA_DIR, exist_ok=True)
+        with open(LOG_FILE, "a") as f:
+            f.write(f"[{time.strftime('%H:%M:%S')}] {msg}\n")
+    except:
+        pass
 
 os.makedirs(DATA_DIR, exist_ok=True)
