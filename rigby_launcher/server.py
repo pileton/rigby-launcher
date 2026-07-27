@@ -45,6 +45,7 @@ SETTINGS_DEFAULTS = {
     "fixer_custom_dir": "",
     "installed_version": "",
     "fixer_done": False,
+    "accounts": [],
 }
 
 
@@ -180,6 +181,20 @@ class APIHandler(BaseHTTPRequestHandler):
             self._check_existing_fixer_token()
             self._send_json({**self.__class__.fixer_status, "busy": self.__class__.fixer_busy})
 
+        elif path == "/api/accounts":
+            accounts = settings.get("accounts", [])
+            active_token = ""
+            itch_file = os.path.join(self._fixer_target_dir(), "itch")
+            if os.path.exists(itch_file):
+                try:
+                    with open(itch_file) as f:
+                        active_token = f.read().strip()
+                except:
+                    pass
+            for acc in accounts:
+                acc["active"] = acc.get("token", "") == active_token
+            self._send_json({"accounts": accounts, "max": 5})
+
         elif path == "/api/fixer/detect-dir":
             detected = self._detect_fixer_dir()
             self._send_json({"dir": detected})
@@ -243,6 +258,37 @@ class APIHandler(BaseHTTPRequestHandler):
                 self._send_json({"ok": True, "message": "Token saved to custom directory"})
             else:
                 self._send_json({"ok": False, "message": "No token available. Login first."}, 400)
+
+        elif parsed.path == "/api/accounts/add":
+            if self.__class__.fixer_busy:
+                self._send_json({"ok": False, "message": "Login already in progress"})
+                return
+            accounts = settings.get("accounts", [])
+            if len(accounts) >= 5:
+                self._send_json({"ok": False, "message": "Maximum 5 accounts reached"})
+                return
+            self.__class__.fixer_busy = True
+            threading.Thread(target=self._run_account_add, daemon=True).start()
+            self._send_json({"ok": True, "message": "OAuth flow started"})
+
+        elif parsed.path == "/api/accounts/switch":
+            token = data.get("token", "")
+            if not token:
+                self._send_json({"ok": False, "message": "No token provided"}, 400)
+                return
+            target_dir = self._fixer_target_dir()
+            os.makedirs(target_dir, exist_ok=True)
+            with open(os.path.join(target_dir, "itch"), "w") as f:
+                f.write(token)
+            self._check_existing_fixer_token()
+            self._send_json({"ok": True, "message": "Switched account"})
+
+        elif parsed.path == "/api/accounts/remove":
+            token = data.get("token", "")
+            accounts = [a for a in settings.get("accounts", []) if a.get("token", "") != token]
+            settings["accounts"] = accounts
+            save_settings(settings)
+            self._send_json({"ok": True, "accounts": accounts})
 
         else:
             self._send_json({"error": "unknown endpoint"}, 404)
@@ -347,6 +393,42 @@ class APIHandler(BaseHTTPRequestHandler):
                 with open(os.path.join(target_dir, "itch"), "w") as f:
                     f.write(token)
                 self._check_existing_fixer_token()
+        finally:
+            oauth.stop()
+            self.__class__.fixer_busy = False
+
+    def _run_account_add(self):
+        oauth = OAuthServer()
+        try:
+            auth_url = f"https://itch.io/user/oauth?client_id={ITCH_CLIENT_ID}&scope=profile:me&redirect_uri=http://127.0.0.1:{OAUTH_PORT}&response_type=token"
+            webbrowser.open(auth_url)
+            oauth.start()
+            token = oauth.token
+            if not token:
+                return
+            username = "User"
+            avatar_url = ""
+            try:
+                import requests
+                r = requests.get("https://itch.io/api/1/key/me", headers={"Authorization": token}, timeout=10)
+                if r.status_code == 200:
+                    u = r.json().get("user", {})
+                    username = u.get("username", "User")
+                    avatar_url = u.get("cover_url", "")
+            except:
+                pass
+            accounts = list(settings.get("accounts", []))
+            accounts.append({"token": token, "username": username, "avatar_url": avatar_url})
+            settings["accounts"] = accounts
+            save_settings(settings)
+            target_dir = self._fixer_target_dir()
+            os.makedirs(target_dir, exist_ok=True)
+            with open(os.path.join(target_dir, "itch"), "w") as f:
+                f.write(token)
+            self.__class__.fixer_status["token"] = token
+            self.__class__.fixer_status["username"] = username
+            self.__class__.fixer_status["avatar_url"] = avatar_url
+            self.__class__.fixer_status["logged_in"] = True
         finally:
             oauth.stop()
             self.__class__.fixer_busy = False
