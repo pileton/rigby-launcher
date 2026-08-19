@@ -223,6 +223,7 @@ html, body {
 .dropdown-menu {
   position: absolute; top: calc(100% + 6px); left: 0;
   min-width: 100%; background: var(--dropdown-bg);
+  display: flex; flex-direction: column; gap: 1px;
   border: 1px solid var(--element-border); border-radius: 14px;
   padding: 4px; overflow: hidden; z-index: 100;
   opacity: 0; transform: translateY(-6px) scale(0.96);
@@ -465,6 +466,7 @@ html, body {
                 <div class="dropdown-menu">
                   <div class="dropdown-item selected" data-val="dark" onclick="selectTheme('dark')">Dark</div>
                   <div class="dropdown-item" data-val="white" onclick="selectTheme('white')">White</div>
+                  <div class="dropdown-item" data-val="red" onclick="selectTheme('red')">Red</div>
                 </div>
               </div>
             </div>
@@ -487,7 +489,7 @@ html, body {
 
             <div class="element" style="border:none;border-radius:4;padding:8px 0;background:transparent;margin-top:2px">
               <div class="element-info">
-                <div class="element-desc">Launch delay (seconds)</div>
+                <div class="element-desc" style="padding-left:6px">Launch delay (seconds)</div>
               </div>
               <div class="slider-wrap">
                 <div class="c-slider" id="csl-delay" data-value="5">
@@ -495,7 +497,7 @@ html, body {
                   <div class="c-slider-fill" style="width:16.6%"></div>
                   <div class="c-slider-thumb" style="left:calc(16.6% - 14px)"></div>
                 </div>
-                <span class="slider-val" id="csl-delay-v">5s</span>
+                <span class="slider-val" id="csl-delay-v" style="margin-left:-6px">5s</span>
               </div>
             </div>
 
@@ -547,6 +549,8 @@ html, body {
       <div class="cl-date">August 2026</div>
       <div class="cl-item">Added missing v0.3 changelog</div>
       <div class="cl-item">Fixed several visual bugs in the ui</div>
+      <div class="cl-item">Fixed launcher updating</div>
+      <div class="cl-item">Fixed itch.io pfp not showing</div>
       <div class="cl-item">Added new themes</div>
       <div class="cl-item">Improved perfomance (launcher)</div>
     </div>
@@ -705,6 +709,7 @@ const gl = renderer.gl;
 gl.clearColor(0, 0, 0, 0);
 
 let program;
+let paused = false;
 let currentMouse = [0.5, 0.5];
 let targetMouse = [0.5, 0.5];
 
@@ -761,6 +766,7 @@ gl.canvas.addEventListener('mousemove', handleMouseMove);
 gl.canvas.addEventListener('mouseleave', handleMouseLeave);
 
 function update(time) {
+  if (paused) return;
   requestAnimationFrame(update);
   program.uniforms.uTime.value = time * 0.001;
 
@@ -771,6 +777,11 @@ function update(time) {
 
   renderer.render({ scene: mesh });
 }
+
+document.addEventListener('visibilitychange', function() {
+  if (document.hidden) { paused = true; }
+  else if (paused) { paused = false; requestAnimationFrame(update); }
+});
 requestAnimationFrame(update);
 </script>
 <script>
@@ -811,8 +822,9 @@ function selectVer(val) { selectDD('ver-dd', val); }
 
 function selectTheme(val) {
   selectDD('theme-dd', val);
+  document.documentElement.classList.remove('white', 'red');
   if (val === 'white') document.documentElement.classList.add('white');
-  else document.documentElement.classList.remove('white');
+  else if (val === 'red') document.documentElement.classList.add('red');
   saveSettings();
 }
 
@@ -901,6 +913,7 @@ async function runFixer() {
   hideFixerOverlay();
   fixerRunning = false;
   refreshStatus();
+  loadAccts();
 }
 
 async function loadVersions() {
@@ -925,12 +938,14 @@ async function checkGameStatus() {
   try {
     const r = await fetch('/api/status');
     state = await r.json();
-    if (state.settings?.theme === 'white') {
-      document.documentElement.classList.add('white');
+    if (state.settings?.theme) {
+      document.documentElement.classList.remove('white', 'red');
+      if (state.settings.theme === 'white') document.documentElement.classList.add('white');
+      else if (state.settings.theme === 'red') document.documentElement.classList.add('red');
     }
-    if (state.latest_release && state.latest_release !== state.selected_version) {
+    if (state.latest_release && state.latest_release !== state.installed_version) {
       $('update-badge').classList.add('show');
-      if (state.settings?.auto_update && !downloading && !state.game_installed) {
+      if (state.settings?.auto_update && !downloading) {
         updateToLatest();
       }
     } else {
@@ -965,7 +980,8 @@ async function updateToLatest() {
   });
   if (found) {
     $('update-badge').classList.remove('show');
-    handleDownload();
+    await handleDownload();
+    checkGameStatus();
   }
 }
 
@@ -1049,8 +1065,9 @@ async function refreshStatus() {
     $('theme-lbl').textContent = theme.charAt(0).toUpperCase() + theme.slice(1);
     const themeMenuItems = document.querySelectorAll('#theme-dd .dropdown-item');
     themeMenuItems.forEach(i => i.classList.toggle('selected', i.dataset.val === theme));
+    document.documentElement.classList.remove('white', 'red');
     if (theme === 'white') document.documentElement.classList.add('white');
-    else document.documentElement.classList.remove('white');
+    else if (theme === 'red') document.documentElement.classList.add('red');
     const delay = s.launch_delay || 5;
     const dp = Math.round(delay / 30 * 100);
     const dsl = $('csl-delay');
@@ -1117,8 +1134,8 @@ async function loadAccts() {
       if (acc.active) {
         item.classList.add('active');
         activeFound = true;
-        if (acc.avatar_url) pillImg.src = acc.avatar_url;
-        else pillImg.src = '';
+        if (acc.avatar_url) { pillImg.src = acc.avatar_url; pillImg.style.display = ''; }
+        else { pillImg.src = ''; pillImg.style.display = 'none'; }
         pillName.textContent = acc.username || 'Account';
       }
       var img = document.createElement('img');
@@ -1155,11 +1172,13 @@ async function loadAccts() {
       list.appendChild(item);
     });
     if (!activeFound && d.accounts.length > 0) {
-      pillImg.src = d.accounts[0].avatar_url || '';
+      if (d.accounts[0].avatar_url) { pillImg.src = d.accounts[0].avatar_url; pillImg.style.display = ''; }
+      else { pillImg.src = ''; pillImg.style.display = 'none'; }
       pillName.textContent = d.accounts[0].username || 'Account';
     }
     if (!activeFound && d.accounts.length === 0) {
       pillImg.src = '';
+      pillImg.style.display = 'none';
       pillName.textContent = 'Account';
     }
     var addBtn = document.getElementById('acct-add-btn');
