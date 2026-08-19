@@ -34,6 +34,36 @@ HTML_INDEX = """<!DOCTYPE html>
   --thumb: rgba(255,255,255,0.06);
 }
 
+.red {
+  --bg: #120000;
+  --text: #ffffff;
+  --placeholder: #a1a1a1;
+  --button: rgba(25, 10, 10, 0.55);
+  --button-border: rgba(255, 255, 255, 0.06);
+  --icon: #a1a1aa;
+  --toggle: #33C759;
+  --slider: #0091FF;
+  --element: rgba(25, 10, 10, 0.45);
+  --element-border: rgba(255, 255, 255, 0.04);
+  --card: rgba(25, 10, 10, 0.45);
+  --card-border: rgba(255, 255, 255, 0.04);
+  --overlay: rgba(0, 0, 0, 0.85);
+  --input-bg: rgba(25, 10, 10, 0.5);
+  --dropdown-bg: rgba(25, 10, 10, 0.6);
+  --hover: rgba(255, 255, 255, 0.04);
+  --hover-border: rgba(255, 255, 255, 0.08);
+  --dropdown-item: rgba(255, 255, 255, 0.7);
+  --dropdown-hover: rgba(255, 255, 255, 0.06);
+  --focus-border: rgba(255, 255, 255, 0.15);
+  --thumb: rgba(255, 255, 255, 0.06);
+}
+.red #titlebar {
+  background: rgba(20, 0, 0, 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
 .white {
   --bg: #ffffff;
   --text: #000000;
@@ -93,7 +123,7 @@ html, body {
   display: inline-flex; align-items: center; justify-content: center; gap: 10px;
   padding: 16px 44px; font-size: 16px; font-weight: 600;
   border: 1px solid var(--button-border); border-radius: 14px;
-  cursor: pointer; background: var(--button); color: #fff;
+  cursor: pointer; background: var(--button); color: var(--text);
   font-family: inherit;
   backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
   transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
@@ -455,7 +485,7 @@ html, body {
               <label class="toggle"><input type="checkbox" id="set-auto-launch" onchange="saveSettings()"><div class="toggle-track"></div></label>
             </div>
 
-            <div class="element" style="border:none;border-radius:0;padding:8px 0;background:transparent;margin-top:2px">
+            <div class="element" style="border:none;border-radius:4;padding:8px 0;background:transparent;margin-top:2px">
               <div class="element-info">
                 <div class="element-desc">Launch delay (seconds)</div>
               </div>
