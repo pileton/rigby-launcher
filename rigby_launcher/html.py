@@ -238,7 +238,6 @@ html, body {
 #save-btn:active { background: #282828; }
 #save-btn svg { width: 18px; height: 18px; }
 
-/* fixer overlay */
 #fixer-overlay {
   position: fixed; inset: 0; z-index: 9999;
   background: var(--overlay);
