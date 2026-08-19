@@ -547,8 +547,6 @@ html, body {
       <div class="cl-date">August 2026</div>
       <div class="cl-item">Added missing v0.3 changelog</div>
       <div class="cl-item">Fixed several visual bugs in the ui</div>
-      <div class="cl-item">Fixed launcher updating</div>
-      <div class="cl-item">Fixed itch.io pfp not showing</div>
       <div class="cl-item">Added new themes</div>
       <div class="cl-item">Improved perfomance (launcher)</div>
     </div>
