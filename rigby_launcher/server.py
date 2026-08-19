@@ -18,6 +18,7 @@ ITCH_CLIENT_ID = "1ba9b4bfa1ac7759e8420eed4ec863ba"
 OAUTH_PORT = 7890
 
 RELEASES = {
+    "18I": "https://github.com/jogamerforgames2021/AmongUsLauncherNew/releases/download/18I/app.zip",
     "17.4I": "https://github.com/jogamerforgames2021/AmongUsLauncherNew/releases/download/17.4I/app.zip",
     "17.3I": "https://github.com/jogamerforgames2021/AmongUsLauncherNew/releases/download/17.3I/app.zip",
     "17.2.2I": "https://github.com/jogamerforgames2021/AmongUsLauncherNew/releases/download/17.2.2I/app.zip",
@@ -30,7 +31,7 @@ RELEASES = {
     "16.0.2I": "https://github.com/jogamerforgames2021/AmongUsLauncherNew/releases/download/16.0.2I/app.zip",
 }
 
-selected_version = "17.4I"
+selected_version = "18I"
 latest_release_tag = None
 
 SETTINGS_DEFAULTS = {
