@@ -513,6 +513,22 @@ html, body {
     </button>
     <div id="cl-title">Changelog</div>
     <div class="cl-entry">
+      <div class="cl-ver">v0.4</div>
+      <div class="cl-date">August 2026</div>
+      <div class="cl-item">Added missing v0.3 changelog</div>
+      <div class="cl-item">Fixed several visual bugs in the ui</div>
+      <div class="cl-item">Fixed launcher updating</div>
+      <div class="cl-item">Fixed itch.io pfp not showing</div>
+      <div class="cl-item">Added new themes</div>
+      <div class="cl-item">Improved perfomance (launcher)</div>
+    </div>
+    <div class="cl-entry">
+      <div class="cl-ver">v0.3</div>
+      <div class="cl-date">August 2026</div>
+      <div class="cl-item">Added newest game version 18I</div>
+      <div class="cl-item">Removed useless text in code</div>
+    </div>
+    <div class="cl-entry">
       <div class="cl-ver">v0.2</div>
       <div class="cl-date">July 2026</div>
       <div class="cl-item">Account switching with itch.io OAuth</div>
