@@ -357,8 +357,8 @@ class APIHandler(BaseHTTPRequestHandler):
                             resp = requests.get("https://itch.io/api/1/key/me", headers=headers, timeout=10)
                             if resp.status_code == 200:
                                 user = resp.json().get("user", {})
-                                self.__class__.fixer_status["username"] = user.get("username", "User")
-                                self.__class__.fixer_status["avatar_url"] = user.get("cover_url", "")
+                                self.__class__.fixer_status["username"] = user.get("username") or user.get("display_name") or "User"
+                                self.__class__.fixer_status["avatar_url"] = user.get("cover_url") or user.get("avatar_url") or ""
                         except:
                             pass
                         return
@@ -394,6 +394,21 @@ class APIHandler(BaseHTTPRequestHandler):
                 with open(os.path.join(target_dir, "itch"), "w") as f:
                     f.write(token)
                 self._check_existing_fixer_token()
+                # Persist the logged-in account so its avatar/username reliably show in the toolbar pill
+                username = self.__class__.fixer_status.get("username", "User")
+                avatar_url = self.__class__.fixer_status.get("avatar_url", "")
+                accounts = list(settings.get("accounts", []))
+                idx = next((i for i, a in enumerate(accounts) if a.get("token", "") == token), None)
+                if idx is None:
+                    idx = next((i for i, a in enumerate(accounts) if a.get("username", "") == username), None)
+                if idx is not None:
+                    accounts[idx]["token"] = token
+                    accounts[idx]["avatar_url"] = avatar_url
+                    accounts[idx]["username"] = username
+                else:
+                    accounts.append({"token": token, "username": username, "avatar_url": avatar_url})
+                settings["accounts"] = accounts
+                save_settings(settings)
         finally:
             oauth.stop()
             self.__class__.fixer_busy = False
