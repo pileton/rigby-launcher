@@ -14,10 +14,13 @@ also join our discord server
 
 - Download and manage multiple Among Us versions
 - One-click itch.io authorization
+- muli itch accounts
 - Auto-update to latest releases
 - Auto-launch game on startup
+- Easy updating
+- Better launcher perfomance than others!
 - Custom Wine prefix/binary support
-- Dark and white themes
+- Dark, Red and white themes
 - Glass-morphism UI with animated WebGL wave background
 
 ## Installation
@@ -37,12 +40,6 @@ makepkg -si
 ```bash
 sudo dpkg -i rigby-launcher_1.0.0_all.deb
 sudo apt install -f
-```
-
-#### Flatpak
-
-```bash
-flatpak install rigby-launcher.flatpak
 ```
 
 #### Manual (pip)
