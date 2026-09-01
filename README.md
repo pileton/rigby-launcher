@@ -18,6 +18,9 @@ also join our discord server
 - Auto-update to latest releases
 - Auto-launch game on startup
 - Easy updating
+- Built-in mod manager
+- Fast launcher updates
+- Native linux support (mac not supported)
 - Better launcher perfomance than others!
 - Custom Wine prefix/binary support
 - Dark, Red and white themes
