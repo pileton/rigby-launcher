@@ -25,6 +25,8 @@ also join our discord server
 - Custom Wine prefix/binary support
 - Dark, Red and white themes
 - Glass-morphism UI with animated WebGL wave background
+- Resource watchdog for low end devices
+- Smooth animations
 
 ## Installation
 
