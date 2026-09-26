@@ -361,7 +361,6 @@ html, body {
 .cl-item { font-size: 13px; color: var(--placeholder); margin-bottom: 6px; line-height: 1.5; }
 .cl-item::before { content: '\\2022'; color: var(--slider); display: inline-block; width: 16px; }
 
-/* hide scrollbars on all scrollable menus/lists (Mods list, sidebar, settings, changelog) */
 ::-webkit-scrollbar { width: 0; height: 0; background: transparent; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: transparent; border-radius: 3px; }
@@ -695,7 +694,6 @@ html { scrollbar-width: none; }
       <div class="cl-item">Fixed spacing between dropdown options</div>
       <div class="cl-item">Nudged launch-delay slider labels</div>
       <div class="cl-item">New [BETA] Resource Watchdog</div>
-      <div class="cl-item">Brightened red and blue themes for better contrast</div>
     </div>
     <div class="cl-entry">
       <div class="cl-ver">v0.4</div>
