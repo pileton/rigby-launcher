@@ -35,7 +35,7 @@ HTML_INDEX = """<!DOCTYPE html>
 }
 
 .red {
-  --bg: #120000;
+  --bg: #1a0000;
   --text: #ffffff;
   --placeholder: #a1a1a1;
   --button: rgba(25, 10, 10, 0.55);
@@ -43,13 +43,13 @@ HTML_INDEX = """<!DOCTYPE html>
   --icon: #a1a1aa;
   --toggle: #33C759;
   --slider: #0091FF;
-  --element: rgba(25, 10, 10, 0.45);
+  --element: rgba(36, 12, 12, 0.5);
   --element-border: rgba(255, 255, 255, 0.04);
-  --card: rgba(25, 10, 10, 0.45);
+  --card: rgba(36, 12, 12, 0.5);
   --card-border: rgba(255, 255, 255, 0.04);
   --overlay: rgba(0, 0, 0, 0.85);
-  --input-bg: rgba(25, 10, 10, 0.5);
-  --dropdown-bg: rgba(25, 10, 10, 0.6);
+  --input-bg: rgba(42, 14, 14, 0.55);
+  --dropdown-bg: rgba(48, 16, 16, 0.65);
   --hover: rgba(255, 255, 255, 0.04);
   --hover-border: rgba(255, 255, 255, 0.08);
   --dropdown-item: rgba(255, 255, 255, 0.7);
@@ -58,7 +58,37 @@ HTML_INDEX = """<!DOCTYPE html>
   --thumb: rgba(255, 255, 255, 0.06);
 }
 .red #titlebar {
-  background: rgba(20, 0, 0, 0.4);
+  background: rgba(30, 0, 0, 0.48);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.blue {
+  --bg: #00001a;
+  --text: #ffffff;
+  --placeholder: #a1a1a1;
+  --button: rgba(0, 14, 36, 0.55);
+  --button-border: rgba(255, 255, 255, 0.06);
+  --icon: #a1a1aa;
+  --toggle: #33C759;
+  --slider: #0091FF;
+  --element: rgba(0, 20, 55, 0.5);
+  --element-border: rgba(255, 255, 255, 0.04);
+  --card: rgba(0, 20, 55, 0.5);
+  --card-border: rgba(255, 255, 255, 0.04);
+  --overlay: rgba(0, 0, 0, 0.85);
+  --input-bg: rgba(0, 24, 64, 0.55);
+  --dropdown-bg: rgba(0, 28, 72, 0.65);
+  --hover: rgba(255, 255, 255, 0.04);
+  --hover-border: rgba(255, 255, 255, 0.08);
+  --dropdown-item: rgba(255, 255, 255, 0.7);
+  --dropdown-hover: rgba(255, 255, 255, 0.06);
+  --focus-border: rgba(255, 255, 255, 0.15);
+  --thumb: rgba(255, 255, 255, 0.06);
+}
+.blue #titlebar {
+  background: rgba(0, 0, 42, 0.48);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
@@ -128,7 +158,7 @@ html, body {
   backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
   transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
 }
-.dl-btn:hover { background: var(--card); border-color: var(--button-border); }
+.dl-btn:hover { background: var(--hover); border-color: var(--button-border); }
 .dl-btn:active { transform: scale(0.97); }
 .dl-btn:disabled { opacity: 0.4; cursor: default; transform: none; }
 .dl-btn:disabled:hover { background: var(--button); border-color: var(--button-border); }
@@ -162,12 +192,14 @@ html, body {
   max-height: 0;
   opacity: 0;
   overflow: hidden;
-  transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+  transform: translateY(-6px);
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.24s ease, transform 0.3s ease;
 }
 #settings-area.open {
-  max-height: 5000px;
+  max-height: 760px;
   opacity: 1;
   overflow: visible;
+  transform: translateY(0);
 }
 
 .section { display: flex; flex-direction: column; gap: 10px; }
@@ -210,18 +242,19 @@ html, body {
 
 .dropdown { position: relative; }
 .dropdown-btn {
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 8px;
   padding: 12px 16px; background: var(--element);
   border: 1px solid var(--element-border); border-radius: 14px;
   color: var(--text); font-size: 14px; font-family: inherit;
   cursor: pointer; white-space: nowrap;
   transition: background 0.2s ease, border-color 0.2s ease;
 }
-.dropdown-btn:hover { background: var(--card); border-color: var(--button-border); }
+.dropdown-btn:hover { background: var(--hover); border-color: var(--button-border); }
 .dropdown-btn:active { background: var(--hover); }
-.dropdown-btn svg { width: 16px; height: 16px; margin-left: 4px; opacity: 0.6; }
+.dropdown-btn span { flex: 1; text-align: left; }
+.dropdown-btn svg { width: 16px; height: 16px; margin-left: auto; opacity: 0.6; }
 .dropdown-menu {
-  position: absolute; top: calc(100% + 6px); left: 0;
+  position: absolute; top: calc(100% + 6px); left: auto; right: 0;
   min-width: 100%; background: var(--dropdown-bg);
   display: flex; flex-direction: column; gap: 1px;
   border: 1px solid var(--element-border); border-radius: 14px;
@@ -265,7 +298,7 @@ html, body {
   background: var(--button); color: var(--text); font-family: inherit;
   transition: background 0.2s ease;
 }
-#save-btn:hover { background: var(--card); }
+#save-btn:hover { background: var(--hover); }
 #save-btn:active { background: #282828; }
 #save-btn svg { width: 18px; height: 18px; }
 
@@ -275,6 +308,8 @@ html, body {
   display: none; align-items: center; justify-content: center;
 }
 #fixer-overlay.open { display: flex; }
+.beta-warn { color: #fbbf24; font-size: 12px; margin-left: 4px; opacity: 0.95; }
+.beta-toggles { border-top: 1px solid var(--element-border); }
 #fixer-card {
   background: var(--card); border: 1px solid var(--card-border);
   border-radius: 20px; padding: 40px 48px; text-align: center;
@@ -326,9 +361,11 @@ html, body {
 .cl-item { font-size: 13px; color: var(--placeholder); margin-bottom: 6px; line-height: 1.5; }
 .cl-item::before { content: '\\2022'; color: var(--slider); display: inline-block; width: 16px; }
 
-::-webkit-scrollbar { width: 4px; }
+/* hide scrollbars on all scrollable menus/lists (Mods list, sidebar, settings, changelog) */
+::-webkit-scrollbar { width: 0; height: 0; background: transparent; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: transparent; border-radius: 3px; }
+html { scrollbar-width: none; }
 
 #acct-pill {
   display: flex; align-items: center; gap: 6px;
@@ -379,6 +416,67 @@ html, body {
 .acct-add-btn:hover { border-color: var(--slider); color: var(--slider); }
 .acct-add-btn:disabled { opacity: 0.3; cursor: default; border-color: var(--element-border); color: var(--icon); }
 
+.mods-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 28px; font-size: 13px; font-weight: 500;
+  border: 1px solid var(--button-border); border-radius: 12px;
+  cursor: pointer; background: var(--button); color: var(--text);
+  font-family: inherit;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+.mods-btn:hover { background: var(--hover); border-color: var(--button-border); }
+.mods-btn:active { transform: scale(0.97); }
+.mods-btn svg { width: 22px; height: 22px; }
+#mods-overlay {
+  position: fixed; inset: 0; z-index: 9998;
+  background: var(--overlay);
+  display: none; align-items: center; justify-content: center;
+}
+#mods-overlay.open { display: flex; }
+.mods-card {
+  background: var(--card); border: 1px solid var(--card-border);
+  border-radius: 20px; padding: 24px; max-width: 900px; max-height: 75vh;
+  width: 90vw; display: flex; flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.mods-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-shrink: 0; }
+.mods-title { font-size: 18px; font-weight: 600; }
+.mods-close { background: none; border: none; color: var(--icon); cursor: pointer; padding: 6px; }
+.mods-close:hover { color: var(--text); }
+.mods-layout { display: flex; gap: 16px; flex: 1; min-height: 0; }
+.mods-sidebar { min-width: 150px; flex-shrink: 0; overflow-y: auto; }
+.mods-section-label { font-size: 11px; color: var(--placeholder); text-transform: uppercase; letter-spacing: 0.05em; margin: 14px 0 6px; }
+.mods-filter { display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px; }
+.mods-filter-btn { padding: 7px 10px; font-size: 13px; border: 1px solid var(--element-border); border-radius: 10px; background: var(--element); color: var(--text); cursor: pointer; text-align: left; transition: background 0.15s; }
+.mods-filter-btn:hover { background: var(--hover); }
+.mods-filter-btn.active { color: var(--slider); background: rgba(0,145,255,0.1); border-color: var(--slider); }
+.mods-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.mod-row {
+  display: flex; align-items: center; gap: 12px; padding: 10px;
+  border: 1px solid var(--element-border); border-radius: 14px; background: var(--element);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+.mod-row img { width: 64px; height: 64px; border-radius: 10px; object-fit: cover; flex-shrink: 0; background: var(--thumb); }
+.mod-body { flex: 1; min-width: 0; }
+.mod-name { font-size: 14px; font-weight: 500; }
+.mod-desc { font-size: 12px; color: var(--placeholder); margin-top: 2px; }
+.mod-cats { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px; }
+.mod-cat { font-size: 11px; color: var(--slider); background: rgba(0,145,255,0.1); padding: 2px 8px; border-radius: 6px; }
+.mod-added { width: 18px; height: 18px; flex-shrink: 0; margin-top: 4px; stroke: var(--toggle); fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.mod-add { flex-shrink: 0; padding: 8px 14px; font-size: 13px; border: 1px solid var(--element-border); border-radius: 10px; background: var(--button); color: var(--text); cursor: pointer; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); transition: background 0.2s; }
+.mod-add:hover { background: var(--hover); }
+.mod-remove { color: #ef4444; }
+.mods-cta { margin: 32px auto 0; display: flex; justify-content: center; width: 100%; }
+.mods-filter-btn { transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease; }
+.mods-filter-btn:hover { transform: translateX(2px); }
+.mods-filter-btn.active { transform: none; }
+.mod-row { transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease; }
+.mod-row:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.35); }
+.mod-add { transition: background 0.15s ease, transform 0.15s ease; }
+.mod-add:hover { transform: scale(1.05); }
+.mods-card { opacity: 0; transform: translateY(8px); transition: opacity 0.18s ease, transform 0.18s ease; }
+#mods-overlay.open .mods-card { opacity: 1; transform: translateY(0); }
 #waves {
   position: fixed; inset: 0; z-index: 0;
   overflow: hidden; pointer-events: none !important;
@@ -412,7 +510,7 @@ html, body {
       <svg class="lucide" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
       Update available
     </div>
-    <a href="https://github.com/pileton/rigby-launcher" target="_blank" class="title-icon" style="display:inline-flex;color:var(--icon);"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" stroke="none"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg></a>
+    <a href="https://github.com/pileton/rigby-launcher" class="title-icon" onclick="openGithub();return false;" style="display:inline-flex;color:var(--icon);"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" stroke="none"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg></a>
   </div>
 
   <div id="main">
@@ -437,6 +535,13 @@ html, body {
 
         <button class="icon-btn" onclick="toggleChangelog()">
           <svg class="lucide" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </button>
+      </div>
+
+      <div class="mods-cta">
+        <button class="mods-btn" id="mods-btn" onclick="toggleMods()">
+          <svg class="lucide" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="2"/><path d="M8 6V4h8v4"/></svg>
+          Mods
         </button>
       </div>
 
@@ -467,6 +572,7 @@ html, body {
                   <div class="dropdown-item selected" data-val="dark" onclick="selectTheme('dark')">Dark</div>
                   <div class="dropdown-item" data-val="white" onclick="selectTheme('white')">White</div>
                   <div class="dropdown-item" data-val="red" onclick="selectTheme('red')">Red</div>
+                  <div class="dropdown-item" data-val="blue" onclick="selectTheme('blue')">Blue</div>
                 </div>
               </div>
             </div>
@@ -487,7 +593,42 @@ html, body {
               <label class="toggle"><input type="checkbox" id="set-auto-launch" onchange="saveSettings()"><div class="toggle-track"></div></label>
             </div>
 
-            <div class="element" style="border:none;border-radius:4;padding:8px 0;background:transparent;margin-top:2px">
+            <div class="config-inline" style="border-top:1px solid var(--element-border);padding-top:12px">
+              <div>
+                <div style="font-size:14px;font-weight:500">⚠ BETA Resource watchdog</div>
+                <div style="font-size:12px;color:var(--placeholder);margin-top:2px">⚠ BETA: monitor game/launcher resources; may terminate the game or lower launcher priority on sustained high usage</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="set-beta-watchdog" onchange="toggleBetaWatchdog()"><div class="toggle-track"></div></label>
+            </div>
+            <div class="beta-toggles" id="beta-toggles" style="display:none;border-top:1px solid var(--element-border);padding:10px 0 0 10px">
+              <div class="config-inline" style="border-top:1px solid var(--element-border);padding-top:12px">
+                <div>
+                  <div style="font-size:14px;font-weight:500">Terminate game on high resources <strong style="color:#ef4444">⚠ BETA</strong></div>
+                  <div style="font-size:12px;color:var(--placeholder);margin-top:2px">⚠ BETA: end the Among Us process when usage stays high</div>
+                </div>
+                <label class="toggle"><input type="checkbox" id="set-beta-terminate" onchange="saveSettings()"><div class="toggle-track"></div></label>
+              </div>
+              <div class="config-inline" style="border-top:1px solid var(--element-border);padding-top:12px">
+                <div>
+                  <div style="font-size:14px;font-weight:500">Limit/launcher on high resources <strong style="color:#ef4444">⚠ BETA</strong></div>
+                  <div style="font-size:12px;color:var(--placeholder);margin-top:2px">⚠ BETA: lower launcher priority when usage stays high</div>
+                </div>
+                <label class="toggle"><input type="checkbox" id="set-beta-limit" onchange="saveSettings()"><div class="toggle-track"></div></label>
+              </div>
+            </div>
+
+            <div class="config-inline" style="border-top:1px solid var(--element-border);padding-top:12px">
+              <div>
+                <div style="font-size:14px;font-weight:500">Launcher Updates</div>
+                <div style="font-size:12px;color:var(--placeholder);margin-top:2px">Reinstall or update Rigby Launcher itself</div>
+              </div>
+              <button onclick="launcherUpdate()" style="padding:8px 16px;font-size:13px;background:var(--input-bg);border:1px solid var(--element-border);border-radius:10px;color:var(--text);cursor:pointer;font-family:inherit;transition:background 0.2s" onmouseover="this.style.background='var(--hover)'" onmouseout="this.style.background=''">
+                <svg class="lucide" viewBox="0 0 24 24" style="width:14px;height:14px;margin-right:6px;vertical-align:middle"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"/><path d="M7 12h10"/><path d="M12 7v10"/></svg>
+                Update launcher
+              </button>
+            </div>
+
+            <div class="element" style="border:none;border-radius: 4px ;padding:8px 0;background:transparent;margin-top:2px">
               <div class="element-info">
                 <div class="element-desc" style="padding-left:6px">Launch delay (seconds)</div>
               </div>
@@ -545,6 +686,18 @@ html, body {
     </button>
     <div id="cl-title">Changelog</div>
     <div class="cl-entry">
+      <div class="cl-ver">v0.5</div>
+      <div class="cl-date">August 2026</div>
+      <div class="cl-item">Added blue theme</div>
+      <div class="cl-item">Added red theme</div>
+      <div class="cl-item">Added mod manager with BepInEx integration (direct .dll installs from GitHub)</div>
+      <div class="cl-item">In-launcher launcher reinstall/update</div>
+      <div class="cl-item">Fixed spacing between dropdown options</div>
+      <div class="cl-item">Nudged launch-delay slider labels</div>
+      <div class="cl-item">New [BETA] Resource Watchdog</div>
+      <div class="cl-item">Brightened red and blue themes for better contrast</div>
+    </div>
+    <div class="cl-entry">
       <div class="cl-ver">v0.4</div>
       <div class="cl-date">August 2026</div>
       <div class="cl-item">Added missing v0.3 changelog</div>
@@ -574,6 +727,24 @@ html, body {
       <div class="cl-ver">v0.1</div>
       <div class="cl-date">Initial release</div>
       <div class="cl-item">First release of the launcher</div>
+    </div>
+  </div>
+</div>
+
+<div id="mods-overlay">
+  <div class="mods-card">
+    <div class="mods-header">
+      <div class="mods-title">Mods</div>
+      <button class="mods-close" onclick="toggleMods()">&#10005;</button>
+    </div>
+    <div class="mods-layout">
+      <div class="mods-sidebar">
+        <div class="mods-section-label">Among Us versions</div>
+        <div class="mods-filter" id="mods-versions"></div>
+        <div class="mods-section-label">Categories</div>
+        <div class="mods-filter" id="mods-categories"></div>
+      </div>
+      <div class="mods-list" id="mods-list"></div>
     </div>
   </div>
 </div>
@@ -792,6 +963,7 @@ let downloading = false;
 let launching = false;
 let fixerRunning = false;
 let autoLaunchTimer = null;
+let autoLaunchArmed = false;
 
 function $(id) { return document.getElementById(id); }
 
@@ -818,13 +990,17 @@ function selectDD(id, val) {
   menu.classList.remove('open');
 }
 
-function selectVer(val) { selectDD('ver-dd', val); }
+async function selectVer(val) {
+  selectDD('ver-dd', val);
+  try { await fetch('/api/versions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ version: val }) }); } catch (e) {}
+}
 
 function selectTheme(val) {
   selectDD('theme-dd', val);
-  document.documentElement.classList.remove('white', 'red');
+  document.documentElement.classList.remove('white', 'red', 'blue');
   if (val === 'white') document.documentElement.classList.add('white');
   else if (val === 'red') document.documentElement.classList.add('red');
+  else if (val === 'blue') document.documentElement.classList.add('blue');
   saveSettings();
 }
 
@@ -890,6 +1066,7 @@ function showFixerOverlay(title, sub, done) {
 function hideFixerOverlay() { $('fixer-overlay').classList.remove('open'); }
 
 function toggleChangelog() { $('cl-overlay').classList.toggle('open'); }
+function openGithub() { window.location = 'https://github.com/pileton/rigby-launcher'; }
 
 async function runFixer() {
   if (fixerRunning) return;
@@ -939,9 +1116,10 @@ async function checkGameStatus() {
     const r = await fetch('/api/status');
     state = await r.json();
     if (state.settings?.theme) {
-      document.documentElement.classList.remove('white', 'red');
+      document.documentElement.classList.remove('white', 'red', 'blue');
       if (state.settings.theme === 'white') document.documentElement.classList.add('white');
       else if (state.settings.theme === 'red') document.documentElement.classList.add('red');
+      else if (state.settings.theme === 'blue') document.documentElement.classList.add('blue');
     }
     if (state.latest_release && state.latest_release !== state.installed_version) {
       $('update-badge').classList.add('show');
@@ -957,10 +1135,14 @@ async function checkGameStatus() {
     } else if (!downloading) {
       setBtnState('download');
     }
-    if (state.settings?.auto_launch && state.game_installed && !autoLaunchTimer) {
+    if (!verMatch || !state.game_installed) {
+      autoLaunchArmed = false;
+    }
+    if (state.settings?.auto_launch && state.game_installed && !autoLaunchTimer && !autoLaunchArmed) {
       const delay = (state.settings.launch_delay || 5) * 1000;
       autoLaunchTimer = setTimeout(() => {
         autoLaunchTimer = null;
+        autoLaunchArmed = true;
         if (!launching && state.wine_available) handlePlay();
       }, delay);
     }
@@ -995,7 +1177,15 @@ async function handlePlay() {
   if (launching) return;
   launching = true;
   $('dl-main').disabled = true;
-  try { await fetch('/api/launch', { method: 'POST' }); } catch(e) {}
+  try {
+    const r = await fetch('/api/launch', { method: 'POST' });
+    const d = await r.json();
+    if (d.ok === false) {
+      alert(d.message || 'Launch failed');
+    } else {
+      checkGameStatus();
+    }
+  } catch(e) {}
   $('dl-main').disabled = false;
   launching = false;
 }
@@ -1061,13 +1251,22 @@ async function refreshStatus() {
     $('set-wine-bin').value = s.wine_binary || 'wine';
     $('set-auto-update').checked = s.auto_update === true;
     $('set-auto-launch').checked = s.auto_launch === true;
+    $('set-beta-watchdog').checked = s.beta_watchdog === true;
+    if (s.beta_watchdog === true) {
+      $('beta-toggles').style.display = 'block';
+      $('set-beta-terminate').checked = s.beta_terminate === true;
+      $('set-beta-limit').checked = s.beta_limit_launcher === true;
+    } else {
+      $('beta-toggles').style.display = 'none';
+    }
     const theme = s.theme || 'dark';
     $('theme-lbl').textContent = theme.charAt(0).toUpperCase() + theme.slice(1);
     const themeMenuItems = document.querySelectorAll('#theme-dd .dropdown-item');
     themeMenuItems.forEach(i => i.classList.toggle('selected', i.dataset.val === theme));
-    document.documentElement.classList.remove('white', 'red');
+    document.documentElement.classList.remove('white', 'red', 'blue');
     if (theme === 'white') document.documentElement.classList.add('white');
     else if (theme === 'red') document.documentElement.classList.add('red');
+    else if (theme === 'blue') document.documentElement.classList.add('blue');
     const delay = s.launch_delay || 5;
     const dp = Math.round(delay / 30 * 100);
     const dsl = $('csl-delay');
@@ -1098,11 +1297,24 @@ async function saveSettings() {
         wine_binary: $('set-wine-bin').value,
         auto_update: $('set-auto-update').checked,
         auto_launch: $('set-auto-launch').checked,
+        beta_watchdog: $('set-beta-watchdog').checked,
+        beta_terminate: $('set-beta-terminate').checked,
+        beta_limit_launcher: $('set-beta-limit').checked,
         theme: $('theme-lbl').textContent.trim().toLowerCase(),
         launch_delay: parseInt(($('csl-delay')?.dataset.seconds) || 5),
       })
     });
   } catch(e) {}
+}
+
+function toggleBetaWatchdog() {
+  const on = $('set-beta-watchdog').checked;
+  $('beta-toggles').style.display = on ? 'block' : 'none';
+  if (!on) {
+    $('set-beta-terminate').checked = false;
+    $('set-beta-limit').checked = false;
+  }
+  saveSettings();
 }
 
 
@@ -1186,6 +1398,22 @@ async function loadAccts() {
   } catch(e) {}
 }
 
+async function launcherUpdate() {
+  if (!confirm('Download and reinstall Rigby Launcher now?')) return;
+  try {
+    const r = await fetch('/api/launcher/update', { method: 'POST' });
+    const d = await r.json();
+    if (d.ok) {
+      showFixerOverlay(d.message || 'Launcher updated', 'Restart the launcher to apply the update', true);
+      setTimeout(hideFixerOverlay, 3500);
+    } else {
+      alert(d.message || 'Launcher update failed');
+    }
+  } catch(e) {
+    alert('Launcher update failed');
+  }
+}
+
 async function addAccount() {
   try {
     var r = await fetch('/api/accounts/add', { method: 'POST' });
@@ -1212,6 +1440,113 @@ async function removeAccount(token) {
   });
   loadAccts();
 }
+
+let modsState = {version: '', category: ''};
+let modsCache = {versions: [], categories: [], mods: [], installed: [], bepinex_installed: false, current_version: ''};
+
+function toggleMods() {
+  const ov = $('mods-overlay');
+  ov.classList.toggle('open');
+  if (ov.classList.contains('open')) loadMods();
+}
+
+async function loadMods() {
+  try {
+    const r = await fetch('/api/mods');
+    const d = await r.json();
+    modsCache = d;
+    if (!modsState.version) modsState.version = d.current_version || '';
+    renderModFilters();
+    renderMods();
+  } catch(e) {}
+}
+
+function renderModFilters() {
+  let vhtml = '<div class="mods-filter-btn" data-filter="version" data-val="">All versions</div>';
+  (modsCache.versions || []).forEach(function(v) {
+    vhtml += '<div class="mods-filter-btn" data-filter="version" data-val="' + v + '">' + v + '</div>';
+  });
+  $('mods-versions').innerHTML = vhtml;
+  let ch = '<div class="mods-filter-btn" data-filter="category" data-val="">All categories</div>';
+  (modsCache.categories || []).forEach(function(c) {
+    ch += '<div class="mods-filter-btn" data-filter="category" data-val="' + c + '">' + c + '</div>';
+  });
+  $('mods-categories').innerHTML = ch;
+  refreshModSelection();
+}
+
+function refreshModSelection() {
+  document.querySelectorAll('.mods-filter-btn').forEach(function(b) {
+    const isVer = b.dataset.filter === 'version';
+    b.classList.toggle('active', isVer ? b.dataset.val === modsState.version : b.dataset.val === modsState.category);
+  });
+}
+
+function setModFilter(field, val) {
+  modsState[field] = val;
+  refreshModSelection();
+  renderMods();
+}
+
+document.addEventListener('click', function(e) {
+  const b = e.target.closest('.mods-filter-btn');
+  if (b) setModFilter(b.dataset.filter, b.dataset.val);
+});
+
+function renderMods() {
+  const installed = modsCache.installed || [];
+  const mods = (modsCache.mods || []).filter(function(m) {
+    if (modsState.version && m.version !== modsState.version) return false;
+    if (modsState.category && !(m.categories || []).includes(modsState.category)) return false;
+    return true;
+  });
+  let html = '';
+  if (!mods.length) {
+    html = '<div style="color:var(--placeholder);padding:12px">No mods match these filters.</div>';
+  }
+  mods.forEach(function(m) {
+    const isInstalled = installed.some(function(i) { return i.id === m.id; });
+    let cats = (m.categories || []).map(function(c) { return '<span class="mod-cat">' + c + '</span>'; }).join('');
+    html += '<div class="mod-row">';
+    html += '<img src="' + m.image + '" alt="' + m.name + '">';
+    html += '<div class="mod-body">';
+    html += '<div class="mod-name">' + m.name + '</div>';
+    html += '<div class="mod-desc">' + m.description + '</div>';
+    html += '<div class="mod-cats">' + cats + '</div>';
+    html += isInstalled ? '<svg class="mod-added" viewBox="0 0 24 24"><polyline points="20 6 9 17 5 13"/></svg>' : '';
+    html += '</div>';
+    if (isInstalled) {
+      html += '<button class="mod-add mod-remove" data-id="' + m.id + '" onclick="modRemove(this)" title="Remove mod">Remove</button>';
+    } else {
+      html += '<button class="mod-add" data-id="' + m.id + '" onclick="modInstall(this)" title="Add mod">Add</button>';
+    }
+    html += '</div>';
+  });
+  $('mods-list').innerHTML = html;
+}
+
+async function modInstall(btn) {
+  const id = btn.dataset.id;
+  if (!confirm('Install this mod? BepInEx will be set up automatically if it is missing.')) return;
+  try {
+    const r = await fetch('/api/mods/install/' + id, { method: 'POST' });
+    const d = await r.json();
+    alert(d.message || (d.ok ? 'Installed' : 'Failed'));
+    if (d.ok) loadMods();
+  } catch(e) { alert('Install failed'); }
+}
+
+async function modRemove(btn) {
+  const id = btn.dataset.id;
+  if (!confirm('Remove this mod?')) return;
+  try {
+    const r = await fetch('/api/mods/remove/' + id, { method: 'POST' });
+    const d = await r.json();
+    alert(d.message || (d.ok ? 'Removed' : 'Failed'));
+    if (d.ok) loadMods();
+  } catch(e) { alert('Remove failed'); }
+}
+
 loadVersions();
 checkGameStatus();
     loadAccts();
