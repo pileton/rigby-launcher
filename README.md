@@ -1,6 +1,6 @@
 # Rigby Launcher
 
-Rigby Launcher a native launcher for Among Us on Linux (with Windows support). it is very lightweight launcher, uses almost no ram (unlike electron) and it is supported on many distros! . it Features game version management, automatic downloads, itch.io login fixer, and a glass-morphism UI with WebGL-animated background.
+Rigby Launcher a native launcher for Among Us on Linux (with Windows support, but no MacOS support!). it is very lightweight launcher, uses almost no ram (unlike electron) and it is supported on many distros! . it Features game version management, automatic downloads, itch.io login fixer, and a glass-morphism UI with WebGL-animated background.
 
 credits go to jogamerforgames2021, without him this launcher wouldnt be possible
 
@@ -23,7 +23,7 @@ also join our discord server
 - Native linux support (mac not supported)
 - Better launcher perfomance than others!
 - Custom Wine prefix/binary support
-- Dark, Red and white themes
+- Dark, Red, Blue and white themes
 - Glass-morphism UI with animated WebGL wave background
 - Resource watchdog for low end devices
 - Smooth animations
@@ -33,7 +33,7 @@ also join our discord server
 ### Linux
 
 #### Arch Linux (PKGBUILD)
-(i recommend you build it yourself because arch builds get build last and may get released later than deb or .exe)
+(i recommend you build it yourself because arch builds get build last and may get released later than .deb or .exe)
 ```bash
 git clone https://github.com/pileton/rigby-launcher
 cd rigby-launcher
