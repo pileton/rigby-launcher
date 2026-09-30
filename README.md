@@ -2,7 +2,7 @@
 
 Rigby Launcher a native launcher for Among Us on Linux (with Windows support, but no MacOS support!). it is very lightweight launcher, uses almost no ram (unlike electron) and it is supported on many distros! . it Features game version management, automatic downloads, itch.io login fixer, and a glass-morphism UI with WebGL-animated background.
 
-credits go to jogamerforgames2021, without him this launcher wouldnt be possible
+credits go to jogamerforges2021, without him this launcher wouldnt be possible
 
 also join our discord server 
 
@@ -40,10 +40,15 @@ cd rigby-launcher
 makepkg -si
 ```
 
+> On a Wayland-only session `makepkg -si` can fail because WebKit2GTK needs an X
+> display at build time. Install `xwayland` (or use an X11 session) and make sure
+> `base-devel`, `webkit2gtk-4.1` and `gtk3` are installed first. A pre-built
+> `rigby-launcher-0.6-1-any.pkg.tar.zst` is also published if building fails.
+
 #### Debian/Ubuntu (.deb)
 
 ```bash
-sudo dpkg -i rigby-launcher_1.0.0_all.deb
+sudo dpkg -i rigby-launcher_0.6_all.deb
 sudo apt install -f
 ```
 
@@ -64,6 +69,12 @@ python -m rigby_launcher
 ```
 
 Or download the pre-built executable from Releases.
+
+> The launcher launches `Among Us.exe`. On Windows (0.6+) it is started
+> natively (no Wine needed). On Linux it is launched through Wine, so Wine must
+> be installed (`pacman -S wine` / `apt install wine`); if the launcher can't
+> find your game, point **Settings -> Game Directory** at your Among Us install
+> folder.
 
 ## Building from Source
 
