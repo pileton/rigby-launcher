@@ -144,7 +144,12 @@ html, body {
   width: 100%; max-width: 560px;
 }
 
-.hero { display: flex; align-items: center; gap: 14px; }
+.hero { display: flex; align-items: center; justify-content: center; gap: 16px; }
+      /* Compact centered cluster: version-picker | Play | gear+changelog.
+         .hero-right is min-width:140px to balance the version-picker (140px) so
+         the middle Play button lands exactly on center. */
+      .hero-center { margin: 0 auto; }
+      .hero-right { min-width: 140px; }
 
 .version-picker .dropdown-btn { min-width: 140px; padding: 12px 16px; font-size: 14px; }
 .version-picker .dropdown-menu { min-width: 160px; }
@@ -175,9 +180,10 @@ html, body {
 .icon-btn:active { transform: scale(0.92); }
 #titlebar .icon-btn { color: var(--text); opacity: 0.8; }
 #titlebar .icon-btn:hover { opacity: 1; }
-.icon-btn svg { width: 22px; height: 22px; }
+.icon-btn svg { width: 22px; height: 22px; transition: transform 0.25s ease; }
 .icon-btn.active { color: var(--text); }
-.icon-btn.active svg { transform: rotate(60deg); }
+.icon-btn.active svg { transform: rotate(90deg); }
+      .icon-btn.open svg { transform: rotate(90deg); }
 .icon-btn:disabled { opacity: 0.3; cursor: default; transform: none; }
 .icon-btn:disabled:hover { background: transparent; color: var(--icon); }
 
@@ -258,13 +264,13 @@ html, body {
   min-width: 100%; background: var(--dropdown-bg);
   display: flex; flex-direction: column; gap: 1px;
   border: 1px solid var(--element-border); border-radius: 14px;
-  padding: 4px; overflow: hidden; z-index: 100;
+  padding: 4px; overflow: hidden; max-height: 50vh; z-index: 100;
   opacity: 0; transform: translateY(-6px) scale(0.96);
   pointer-events: none;
   backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
-.dropdown-menu.open { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+.dropdown-menu.open { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; overflow-y: auto; }
 .dropdown-item {
   padding: 10px 14px; font-size: 13px;
   color: var(--dropdown-item); cursor: pointer;
@@ -273,16 +279,18 @@ html, body {
 }
 .dropdown-item:hover { background: var(--dropdown-hover); color: var(--text); }
 .dropdown-item.selected { color: var(--slider); background: rgba(0,145,255,0.1); }
+.dropdown-item.ver-old { color: #e6b800; }
+.dropdown-item.ver-old::after { content: ' ⚠'; font-size: 11px; opacity: 0.85; }
 
 .progress-bar { width: 100%; height: 4px; background: var(--card); border-radius: 3px; overflow: hidden; }
 .progress-fill { height: 100%; background: var(--slider); border-radius: 3px; transition: width 0.4s ease; }
 
 .config-group { display: flex; flex-direction: column; gap: 12px; width: 100%; }
 .config-row { display: flex; flex-direction: column; gap: 6px; }
-.config-label { font-size: 13px; font-weight: 500; color: var(--placeholder); }
+.config-label { font-size: 13px; font-weight: 600; color: var(--text); }
 .config-input {
   padding: 10px 14px; background: var(--input-bg);
-  border: 1px solid var(--element-border); border-radius: 12px;
+  border: 1px solid var(--hover-border); border-radius: 12px;
   color: var(--text); font-size: 13px; font-family: inherit; outline: none;
   transition: border-color 0.2s ease;
 }
@@ -330,7 +338,7 @@ html, body {
 .update-badge {
   display: none; align-items: center; gap: 6px;
   font-size: 12px; color: var(--slider); cursor: pointer;
-  margin-left: 14px;
+  margin-left: 28px;
 }
 .update-badge.show { display: inline-flex; }
 .update-badge svg { width: 14px; height: 14px; }
@@ -361,10 +369,16 @@ html, body {
 .cl-item { font-size: 13px; color: var(--placeholder); margin-bottom: 6px; line-height: 1.5; }
 .cl-item::before { content: '\\2022'; color: var(--slider); display: inline-block; width: 16px; }
 
+/* hide scrollbars on all scrollable menus/lists (Mods list, sidebar, settings, changelog) */
 ::-webkit-scrollbar { width: 0; height: 0; background: transparent; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: transparent; border-radius: 3px; }
 html { scrollbar-width: none; }
+/* dropdowns/settings are scrollable (overflow:auto) but the thumb/track are
+   invisible (overlay-style) — no visible bar, still scroll with mouse/touchpad. */
+.dropdown-menu::-webkit-scrollbar, #main::-webkit-scrollbar { width: 0; height: 0; }
+.dropdown-menu::-webkit-scrollbar-thumb, #main::-webkit-scrollbar-thumb { background: transparent; }
+.dropdown-menu, #main { scrollbar-width: none; scrollbar-color: transparent transparent; }
 
 #acct-pill {
   display: flex; align-items: center; gap: 6px;
@@ -466,7 +480,7 @@ html { scrollbar-width: none; }
 .mod-add { flex-shrink: 0; padding: 8px 14px; font-size: 13px; border: 1px solid var(--element-border); border-radius: 10px; background: var(--button); color: var(--text); cursor: pointer; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); transition: background 0.2s; }
 .mod-add:hover { background: var(--hover); }
 .mod-remove { color: #ef4444; }
-.mods-cta { margin: 32px auto 0; display: flex; justify-content: center; width: 100%; }
+.mods-cta { margin: 16px auto 0; display: flex; justify-content: center; width: 100%; }
 .mods-filter-btn { transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease; }
 .mods-filter-btn:hover { transform: translateX(2px); }
 .mods-filter-btn.active { transform: none; }
@@ -515,6 +529,7 @@ html { scrollbar-width: none; }
   <div id="main">
     <div id="center-wrap">
       <div class="hero">
+        <div class="hero-left">
         <div class="dropdown version-picker" id="ver-dd">
           <div class="dropdown-btn" onclick="toggleDropdown('ver-dd')">
             <span id="ver-lbl">17.4I</span>
@@ -522,11 +537,14 @@ html { scrollbar-width: none; }
           </div>
           <div class="dropdown-menu" id="ver-menu"></div>
         </div>
-
+        </div>
+        <div class="hero-center">
         <button class="dl-btn" id="dl-main" onclick="handleDownload()">
           <svg class="lucide" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Download
         </button>
+        </div>
+        <div class="hero-right">
 
         <button class="icon-btn" id="gear-btn" onclick="toggleSettings()">
           <svg class="lucide" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -535,6 +553,7 @@ html { scrollbar-width: none; }
         <button class="icon-btn" onclick="toggleChangelog()">
           <svg class="lucide" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
         </button>
+        </div>
       </div>
 
       <div class="mods-cta">
@@ -548,7 +567,9 @@ html { scrollbar-width: none; }
         <div class="element-info"><div class="element-title" id="dl-label">Downloading...</div></div>
         <div style="width:180px">
           <div class="progress-bar"><div class="progress-fill" id="dl-fill"></div></div>
-          <div style="font-size:11px;color:var(--placeholder);margin-top:3px;text-align:right" id="dl-pct">0%</div>
+          <div style="font-size:11px;color:var(--placeholder);margin-top:3px;text-align:right">
+            <span id="dl-pct">0%</span><span id="dl-speed" style="margin-left:6px;opacity:0.85"></span>
+          </div>
         </div>
       </div>
 
@@ -685,6 +706,17 @@ html { scrollbar-width: none; }
     </button>
     <div id="cl-title">Changelog</div>
     <div class="cl-entry">
+      <div class="cl-ver">v0.6</div>
+      <div class="cl-date">September 2026</div>
+      <div class="cl-item">Added AUnlocker v1.3.1 mod (single-click install into BepInEx)</div>
+      <div class="cl-item">Fixed Hydra/Malum menu text not appearing (was a missing Wine corefonts; auto-installed on launch)</div>
+      <div class="cl-item">Centered the Mods button directly under Play; tightened the vertical gap with no button overlap</div>
+      <div class="cl-item">Settings gear now eases smoothly instead of snapping</div>
+      <div class="cl-item">Changelog clock icon now spins open/close</div>
+      <div class="cl-item">Balanced the hero row so version-picker / Play / gear never overlap on resize</div>
+      <div class="cl-item">Mod icons now lazy-load and are cached to disk to cut image decode RAM</div>
+    </div>
+    <div class="cl-entry">
       <div class="cl-ver">v0.5</div>
       <div class="cl-date">August 2026</div>
       <div class="cl-item">Added blue theme</div>
@@ -694,6 +726,7 @@ html { scrollbar-width: none; }
       <div class="cl-item">Fixed spacing between dropdown options</div>
       <div class="cl-item">Nudged launch-delay slider labels</div>
       <div class="cl-item">New [BETA] Resource Watchdog</div>
+      <div class="cl-item">Brightened red and blue themes for better contrast</div>
     </div>
     <div class="cl-entry">
       <div class="cl-ver">v0.4</div>
@@ -1063,7 +1096,7 @@ function showFixerOverlay(title, sub, done) {
 
 function hideFixerOverlay() { $('fixer-overlay').classList.remove('open'); }
 
-function toggleChangelog() { $('cl-overlay').classList.toggle('open'); }
+function toggleChangelog() { var ov = $('cl-overlay'); ov.classList.toggle('open'); var b = document.querySelector('.icon-btn[onclick="toggleChangelog()"]'); if (b) b.classList.toggle('open', ov.classList.contains('open')); }
 function openGithub() { window.location = 'https://github.com/pileton/rigby-launcher'; }
 
 async function runFixer() {
@@ -1099,9 +1132,11 @@ async function loadVersions() {
     menu.innerHTML = '';
     d.versions.forEach(v => {
       const item = document.createElement('div');
-      item.className = 'dropdown-item' + (v === d.selected ? ' selected' : '');
+      const isOld = parseFloat(v) < 17;
+      item.className = 'dropdown-item' + (v === d.selected ? ' selected' : '') + (isOld ? ' ver-old' : '');
       item.dataset.val = v;
       item.textContent = v;
+      if (isOld) item.title = 'This version may not be supported by Innersloth.';
       item.onclick = function() { selectVer(v); };
       menu.appendChild(item);
     });
@@ -1119,7 +1154,7 @@ async function checkGameStatus() {
       else if (state.settings.theme === 'red') document.documentElement.classList.add('red');
       else if (state.settings.theme === 'blue') document.documentElement.classList.add('blue');
     }
-    if (state.latest_release && state.latest_release !== state.installed_version) {
+    if (state.latest_release && (state.versions || []).includes(state.latest_release) && state.latest_release !== state.installed_version) {
       $('update-badge').classList.add('show');
       if (state.settings?.auto_update && !downloading) {
         updateToLatest();
@@ -1233,7 +1268,9 @@ async function handleDownload() {
         const p = d.download_progress?.progress || 0;
         $('dl-fill').style.width = p + '%';
         $('dl-pct').textContent = p + '%';
-        $('dl-label').textContent = d.download_progress?.extracting ? 'Extracting...' : 'Downloading...';
+        const spd = d.download_progress?.speed || 0;
+        $('dl-speed').textContent = spd > 0 ? fmtSpeed(spd) : '';
+        $('dl-label').textContent = d.download_progress?.extracting ? 'Extracting...' : 'Downloading…';
       } catch(e) {}
     }, 500);
   } catch(e) {}
@@ -1285,24 +1322,44 @@ async function browseGameDir() {
   try { const r = await fetch('/api/browse', { method: 'POST' }); const d = await r.json(); if (d.dir) $('set-game-dir').value = d.dir; } catch(e) {}
 }
 
+function fmtSpeed(bps) { if (!bps || bps <= 0) return ''; if (bps >= 1e6) return (bps / 1e6).toFixed(1) + ' MB/s'; if (bps >= 1e3) return (bps / 1e3).toFixed(1) + ' KB/s'; return bps + ' B/s'; }
+function buildSettingsPayload() {
+  return JSON.stringify({
+    game_dir: $('set-game-dir').value,
+    wine_prefix: $('set-wine-prefix').value,
+    wine_binary: $('set-wine-bin').value,
+    auto_update: $('set-auto-update').checked,
+    auto_launch: $('set-auto-launch').checked,
+    beta_watchdog: $('set-beta-watchdog').checked,
+    beta_terminate: $('set-beta-terminate').checked,
+    beta_limit_launcher: $('set-beta-limit').checked,
+    theme: $('theme-lbl').textContent.trim().toLowerCase(),
+    launch_delay: parseInt(($('csl-delay')?.dataset.seconds) || 5),
+  });
+}
+async function flushPendingSettings() {
+  /* Drain the localStorage write-ahead log on startup, before the first
+     /api/status poll, so a save aborted on the previous close reaches
+     settings.json + the in-memory settings and is reflected in the form. */
+  const pending = localStorage.getItem('rigby-settings-pending');
+  if (!pending) return;
+  try { await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: pending }); } catch(e) {}
+  try { localStorage.removeItem('rigby-settings-pending'); } catch(e) {}
+  await new Promise(r => setTimeout(r, 120));
+}
+
 async function saveSettings() {
-  try {
-    await fetch('/api/settings', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        game_dir: $('set-game-dir').value,
-        wine_prefix: $('set-wine-prefix').value,
-        wine_binary: $('set-wine-bin').value,
-        auto_update: $('set-auto-update').checked,
-        auto_launch: $('set-auto-launch').checked,
-        beta_watchdog: $('set-beta-watchdog').checked,
-        beta_terminate: $('set-beta-terminate').checked,
-        beta_limit_launcher: $('set-beta-limit').checked,
-        theme: $('theme-lbl').textContent.trim().toLowerCase(),
-        launch_delay: parseInt(($('csl-delay')?.dataset.seconds) || 5),
-      })
-    });
-  } catch(e) {}
+  /* Durable write-ahead: localStorage.setItem is synchronous and survives a
+     hard GTK/webview close (async fetch/sendBeacon to loopback aborts on
+     destroy). sendBeacon is the fast path for an immediate server write.
+     Scope: version / theme / settings toggles + inputs. */
+  const payload = buildSettingsPayload();
+  try { localStorage.setItem('rigby-settings-pending', payload); } catch(e) {}
+  if (navigator.sendBeacon) {
+    const blob = new Blob([payload], { type: 'application/json' });
+    if (navigator.sendBeacon('/api/settings', blob)) return;
+  }
+  try { await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload }); } catch(e) {}
 }
 
 function toggleBetaWatchdog() {
@@ -1494,7 +1551,8 @@ document.addEventListener('click', function(e) {
 function renderMods() {
   const installed = modsCache.installed || [];
   const mods = (modsCache.mods || []).filter(function(m) {
-    if (modsState.version && m.version !== modsState.version) return false;
+    var mv = Array.isArray(m.version) ? m.version : (m.version ? [m.version] : []);
+    if (modsState.version && !mv.includes(modsState.version)) return false;
     if (modsState.category && !(m.categories || []).includes(modsState.category)) return false;
     return true;
   });
@@ -1506,7 +1564,7 @@ function renderMods() {
     const isInstalled = installed.some(function(i) { return i.id === m.id; });
     let cats = (m.categories || []).map(function(c) { return '<span class="mod-cat">' + c + '</span>'; }).join('');
     html += '<div class="mod-row">';
-    html += '<img src="' + m.image + '" alt="' + m.name + '">';
+    html += '<img src="' + m.image + '" alt="' + m.name + '" loading="lazy" width="40" height="40">';
     html += '<div class="mod-body">';
     html += '<div class="mod-name">' + m.name + '</div>';
     html += '<div class="mod-desc">' + m.description + '</div>';
@@ -1546,7 +1604,7 @@ async function modRemove(btn) {
 }
 
 loadVersions();
-checkGameStatus();
+(async () => { await flushPendingSettings(); checkGameStatus(); })();
     loadAccts();
 </script>
 </body>
