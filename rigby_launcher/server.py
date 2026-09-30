@@ -9,6 +9,7 @@ import webbrowser
 import urllib.parse
 import zipfile
 import tempfile
+import hashlib
 import time
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
@@ -19,9 +20,10 @@ ITCH_CLIENT_ID = "1ba9b4bfa1ac7759e8420eed4ec863ba"
 OAUTH_PORT = 7890
 
 LAUNCHER_REPO = "pileton/rigby-launcher"
-LAUNCHER_VERSION = "0.5"
+LAUNCHER_VERSION = "0.6"
 
 RELEASES = {
+    "19I": "https://github.com/jogamerforgames2021/AmongUsLauncherNew/releases/download/19I/app.zip",
     "18I": "https://github.com/jogamerforgames2021/AmongUsLauncherNew/releases/download/18I/app.zip",
     "17.4I": "https://github.com/jogamerforgames2021/AmongUsLauncherNew/releases/download/17.4I/app.zip",
     "17.3I": "https://github.com/jogamerforgames2021/AmongUsLauncherNew/releases/download/17.3I/app.zip",
@@ -39,9 +41,10 @@ selected_version = "18I"
 latest_release_tag = None
 
 LAUNCHER_REPO = "pileton/rigby-launcher"
-LAUNCHER_VERSION = "0.5"
+LAUNCHER_VERSION = "0.6"
 BEPINEX_REPO = "BepInEx/BepInEx"
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.6 (KHTML, like Gecko) Chrome/120.0 Safari/537.6"
+
 _HTTP_SESSION = None
 
 def _http_session():
@@ -84,7 +87,6 @@ def _download(url, dest_path):
         return True, ""
     except Exception as e:
         last = str(e) or type(e).__name__
-    # Fallback: curl (Happy Eyeballs + --retry often succeeds where urllib3 cannot)
     try:
         import shutil, subprocess
         curl = shutil.which("curl")
@@ -100,8 +102,7 @@ def _download(url, dest_path):
         last = last or str(e)
     return False, ("Could not download the file (check your network and that the "
                  "URL is reachable): " + last[:300])
-
-# Mod catalog. Mods are installed directly via .dll download into BepInEx/plugins.
+    
 MODS = [
     {
         "id": "hydra",
@@ -111,10 +112,7 @@ MODS = [
         "description": "Hydra mod menu for Among Us with a wide range of gameplay features.",
         "image": "https://files.catbox.moe/ajyi00.png",
         "url": "https://github.com/MrDiamond64/Hydra/releases/download/v2.0.0/HydraMenu.dll",
-        # Hydra v2.0.0 ships its own compatible BepInEx 6 build (6.0.0-be.785,
-        # whose Cpp2IL supports this Il2CPP game's Unity metadata v31). Prefer
-        # that exact build (arch-matched) over the stock BepInEx 6 pre.2, which
-        # only handles metadata v23-29 and crashes on v31.
+        
         "bepinex": {
             "version": "6.0.0-be.785",
             "win_x86": "https://github.com/MrDiamond64/Hydra/releases/download/v2.0.0/BepInEx-Unity.IL2CPP-win-x86-6.0.0-be.785+6abdba4.zip",
@@ -130,9 +128,45 @@ MODS = [
         "image": "https://files.catbox.moe/sg12ea.png",
         "url": "https://github.com/scp222thj/MalumMenu/releases/download/v3.3.0/MalumMenu-3.3.0.dll",
     },
+    {
+        "id": "aunlocker",
+        "name": "AUnlocker",
+        "version": ["18I", "17.4I"],
+        "categories": ["Cosmetics"],
+        "description": "AUnlocker - unlocks all hats, pets, skins and visors locally. Compatible with game versions 18I and 17.4I.",
+        "image": "https://files.catbox.moe/dqmtno.png",
+        "url": "https://github.com/astra1dev/AUnlocker/releases/download/v1.3.1/AUnlocker_v1.3.1.dll",
+    },
 ]
-# NOTE: Hydra and Malum download real, non-empty .dll files; the 0-byte guard
-# rejects empty/broken URLs instead of silently installing a broken DLL.
+
+ICON_CACHE_DIR = os.path.join(HOME, ".cache", "rigby-launcher", "icons")
+
+
+def _icon_hash(url):
+    return hashlib.sha1(url.encode("utf-8")).hexdigest()[:16]
+
+
+ICON_URLS = {}
+for _m in MODS:
+    _h = _icon_hash(_m["image"])
+    ICON_URLS[_h] = _m["image"]
+    _m["image"] = "/api/icon/" + _h
+
+
+def _prefetch_icons():
+    """Warm the icon cache in a background thread so the first Mods open is instant."""
+    try:
+        os.makedirs(ICON_CACHE_DIR, exist_ok=True)
+        for h, src in list(ICON_URLS.items()):
+            cpath = os.path.join(ICON_CACHE_DIR, h + ".png")
+            if os.path.exists(cpath):
+                continue
+            try:
+                _download(src, cpath)
+            except Exception:
+                pass
+    except Exception:
+        pass
 
 SETTINGS_DEFAULTS = {
     "game_dir": "",
@@ -151,6 +185,7 @@ SETTINGS_DEFAULTS = {
     "fixer_done": False,
     "accounts": [],
     "installed_mods": [],
+    "selected_version": "18I",
 }
 
 
@@ -172,11 +207,8 @@ def save_settings(settings):
 
 settings = load_settings()
 
+selected_version = settings.get("selected_version") or selected_version
 
-# ---- [BETA] Resource watchdog daemon ----
-# Polls the Among Us process (when beta_watchdog is enabled) and, on sustained
-# high CPU, can terminate the game (beta_terminate) or lower the launcher's own
-# priority (beta_limit_launcher). All actions require explicit opt-in toggles.
 def _au_game_procs():
     """Return [(pid, cpu_pct, rss_bytes, args)] for running Among Us processes."""
     if os.name == "nt":
@@ -194,12 +226,10 @@ def _au_game_procs():
             continue
         pid, pcpu, rss, args = parts
         low = args.lower()
-        # Never match the launcher itself or the cwd path ("amongus-launcher")
         if pid == str(self_pid):
             continue
         if "rigby" in low or "amongus-launcher" in low:
             continue
-        # Match the Among Us game process specifically (not the launcher)
         if "among us" in low or "amongus.exe" in low or "amogus" in low:
             try:
                 res.append((int(pid), float(pcpu), int(rss) * 1024, args))
@@ -207,7 +237,7 @@ def _au_game_procs():
                 pass
     return res
 
-_last_launch_ts = 0.0  # anti-spam cooldown for back-to-back game launches
+_last_launch_ts = 0.0
 
 _beta_mon_started = False
 def start_beta_monitor():
@@ -263,14 +293,10 @@ def _default_folder():
 
 
 def _version_folder(version):
-    # per-version install dir: switching one version never clobbers another;
-    # previous versions are never removed.
     return os.path.join(HOME, ".wine-au", "drive_c", "Program Files (x86)", "Among Us_" + version)
 
 
 def _is_version_installed(version):
-    # True if `version` has a folder with Among Us.exe (own folder or the
-    # legacy default folder for the primary version).
     if os.path.exists(os.path.join(_version_folder(version), "Among Us.exe")):
         return True
     if version == settings.get("primary_version", ""):
@@ -289,7 +315,6 @@ def _folder_for_version(version):
 
 
 def detect_game_dir():
-    # always prefer the selected version's own folder (per-version isolation)
     f = _folder_for_version(selected_version)
     if f:
         return f
@@ -341,7 +366,7 @@ class OAuthServer:
 
 
 class APIHandler(BaseHTTPRequestHandler):
-    game_download_progress = {"downloading": False, "progress": 0, "extracting": False, "error": ""}
+    game_download_progress = {"downloading": False, "progress": 0, "extracting": False, "error": "", "speed": 0, "bytes": 0, "total": 0}
     fixer_status = {"logged_in": False, "username": "", "avatar_url": "", "token": ""}
     fixer_busy = False
 
@@ -401,6 +426,7 @@ class APIHandler(BaseHTTPRequestHandler):
                 "installed_version": (selected_version if _is_version_installed(selected_version) else settings.get("installed_version", "")),
                 "installed_versions": [v for v in RELEASES if _is_version_installed(v)],
                 "latest_release": latest_release_tag,
+                "versions": list(RELEASES.keys()),
             })
 
         elif path == "/api/versions":
@@ -444,15 +470,37 @@ class APIHandler(BaseHTTPRequestHandler):
                 "current_version": selected_version,
             })
 
+        elif path.startswith("/api/icon/"):
+            h = path.rsplit("/", 1)[-1]
+            src = ICON_URLS.get(h)
+            if not src:
+                self._send_json({"error": "unknown icon"}, 404)
+            else:
+                os.makedirs(ICON_CACHE_DIR, exist_ok=True)
+                cpath = os.path.join(ICON_CACHE_DIR, h + ".png")
+                if not os.path.exists(cpath):
+                    ok, _msg = _download(src, cpath)
+                    if not ok or not os.path.exists(cpath):
+                        self.send_response(302)
+                        self.send_header("Location", src)
+                        self.end_headers()
+                        return
+                try:
+                    self.send_response(200)
+                    self.send_header("Content-Type", "image/png")
+                    self.send_header("Cache-Control", "public, max-age=31536000")
+                    self.end_headers()
+                    with open(cpath, "rb") as f:
+                        self.wfile.write(f.read())
+                except Exception:
+                    self._send_json({"error": "icon error"}, 500)
+
         elif path.startswith("/api/"):
             self._send_json({"error": "unknown endpoint"}, 404)
 
         else:
             self.send_response(200)
             self.send_header("Content-Type", "text/html")
-            # Force the GTK/webkit client to re-fetch on every load so UI
-            # updates (e.g. the re-sized Mods button) are never served from
-            # the webview's on-disk cache.
             self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
             self.send_header("Pragma", "no-cache")
             self.send_header("Expires", "0")
@@ -482,6 +530,8 @@ class APIHandler(BaseHTTPRequestHandler):
             version = data.get("version", selected_version)
             if version in RELEASES:
                 selected_version = version
+                settings["selected_version"] = version
+                save_settings(settings)
             self._send_json({"ok": True, "selected": selected_version})
 
         elif parsed.path == "/api/browse":
@@ -662,7 +712,6 @@ class APIHandler(BaseHTTPRequestHandler):
                 with open(os.path.join(target_dir, "itch"), "w") as f:
                     f.write(token)
                 self._check_existing_fixer_token()
-                # Persist the logged-in account so its avatar/username reliably show in the toolbar pill
                 username = self.__class__.fixer_status.get("username", "User")
                 avatar_url = self.__class__.fixer_status.get("avatar_url", "")
                 accounts = list(settings.get("accounts", []))
@@ -803,8 +852,6 @@ class APIHandler(BaseHTTPRequestHandler):
             elif info["pkg_type"] == "deb":
                 if not shutil.which("dpkg-deb"):
                     return {"ok": False, "message": "dpkg-deb is not installed; cannot extract the .deb. Install dpkg-deb or run: sudo dpkg -i <file>.deb"}
-                # Extract only (dpkg-deb -x) - never `dpkg -i`, which hits the
-                # "unable to open file '.../DEBIAN': Is a directory" error on some distros.
                 rc = subprocess.run(["dpkg-deb", "-x", tmp.name, staging], capture_output=True, text=True, timeout=180)
             else:
                 return {"ok": True, "message": "Download the Windows .exe from the GitHub releases and install it manually."}
@@ -856,12 +903,24 @@ class APIHandler(BaseHTTPRequestHandler):
             response.raise_for_status()
             total = int(response.headers.get("content-length", 0))
             downloaded = 0
+            last_bytes = 0
+            last_t = time.time()
+            self.__class__.game_download_progress["total"] = total
+            self.__class__.game_download_progress["bytes"] = 0
+            self.__class__.game_download_progress["speed"] = 0
             with open(zip_path, "wb") as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     f.write(chunk)
                     downloaded += len(chunk)
+                    now = time.time()
+                    if now - last_t >= 0.25:
+                        self.__class__.game_download_progress["speed"] = int((downloaded - last_bytes) / (now - last_t))
+                        last_bytes = downloaded
+                        last_t = now
                     if total:
                         self.__class__.game_download_progress["progress"] = int(downloaded / total * 100)
+                    self.__class__.game_download_progress["bytes"] = downloaded
+            self.__class__.game_download_progress["speed"] = 0
             self.__class__.game_download_progress["extracting"] = True
             with zipfile.ZipFile(zip_path, "r") as zf:
                 total_files = len(zf.namelist())
@@ -910,7 +969,6 @@ class APIHandler(BaseHTTPRequestHandler):
                     if ef.read(4) == b"PE\x00\x00":
                         ef.seek(pe + 24)
                         magic = int.from_bytes(ef.read(2), "little")
-                        # 0x10b = PE32 (x86), 0x20b = PE32+ (x64)
                         arch = "x64" if magic == 0x20B else "x86"
         except Exception:
             pass
@@ -920,7 +978,6 @@ class APIHandler(BaseHTTPRequestHandler):
         bdir, game_dir = self._bepinex_dir()
         if not game_dir:
             return {"ok": False, "message": "Game directory not found. Install the game first."}
-        # Remove any existing/outdated BepInEx so we always install the right build.
         if os.path.isdir(bdir):
             shutil.rmtree(bdir, ignore_errors=True)
         for f in ("winhttp.dll", "doorstop_config.ini", ".doorstop_version"):
@@ -936,9 +993,6 @@ class APIHandler(BaseHTTPRequestHandler):
         try:
             import requests
             if bepinex_url:
-                # Mod-specific BepInEx build (e.g. Hydra bundles be.785, whose
-                # Cpp2IL supports this Il2CPP game's metadata v31; the stock
-                # BepInEx 6 pre.2 only handles v23-29 and crashes on v31).
                 zip_path = os.path.join(tempfile.gettempdir(), "bepinex.zip")
                 ok, msg = _download(bepinex_url, zip_path)
                 if not ok:
@@ -957,36 +1011,25 @@ class APIHandler(BaseHTTPRequestHandler):
             r = _http_get(f"https://api.github.com/repos/{BEPINEX_REPO}/releases?per_page=40", timeout=(10, 60))
             if r.status_code != 200:
                 return {"ok": False, "message": "Could not reach BepInEx releases."}
-            # Among Us.exe is Il2CPP (GameAssembly.dll + il2cpp_data/, no Mono
-            # runtime), so it needs BepInEx 6's Unity.IL2CPP package. BepInEx
-            # 5 (repo latest stable) is Mono-only (only mono_jit_init) and
-            # cannot boot an Il2CPP game, so mods never load. BepInEx 6 ships
-            # as a prerelease -- fetch the releases list (incl. prereleases)
-            # and pick the latest v6 tag.
             rels = r.json()
             rel = next((x for x in rels if x.get("tag_name", "").startswith("v6.")), None)
             if not rel:
                 rel = next((x for x in rels if not x.get("prerelease", False)), None)
             all_assets = rel.get("assets", []) if rel else []
-            # Among Us.exe is a 32-bit (PE32/i386) binary run under Wine, so it
-            # needs the Windows x86 build -- an x64 BepInEx cannot inject into a
-            # 32-bit process. Detect the exe architecture and match it.
             arch = "x86"
             exe_path = os.path.join(game_dir, "Among Us.exe")
             try:
                 with open(exe_path, "rb") as ef:
                     if ef.read(2) == b"MZ":
                         ef.seek(0x3C)
-                        pe = int.from_bytes(ef.read(4), "little")      # PE header offset (Lfanew)
+                        pe = int.from_bytes(ef.read(4), "little")
                         ef.seek(pe)
-                        if ef.read(4) == b"PE\x00\x00":                # PE signature
-                            ef.seek(pe + 24)                        # COFF(20) + sig(4) -> optional header magic
+                        if ef.read(4) == b"PE\x00\x00":
+                            ef.seek(pe + 24)
                             magic = int.from_bytes(ef.read(2), "little")
-                            # 0x10b = PE32 (x86), 0x20b = PE32+ (x64)
                             arch = "x64" if magic == 0x20B else "x86"
             except Exception:
                 pass
-            # BepInEx 6 asset naming: BepInEx-Unity.IL2CPP-win-{x86|x64}-<ver>.zip
             target = "Unity.IL2CPP-win-" + arch
             asset = next((a for a in all_assets if target in a["name"] and a["name"].endswith(".zip")), None)
             if not asset:
@@ -1020,10 +1063,6 @@ class APIHandler(BaseHTTPRequestHandler):
         bdir, game_dir = self._bepinex_dir()
         if not game_dir:
             return {"ok": False, "message": "Game directory not found. Install the game first."}
-        # Ensure BepInEx is present and the right build. Mods can ship a
-        # known-compatible BepInEx build (Hydra bundles be.785, whose Cpp2IL
-        # supports this Il2CPP game's metadata v31; the stock BepInEx 6 pre.2
-        # only handles v23-29 and crashes), so prefer the mod's specified build.
         spec = mod.get("bepinex")
         if spec:
             marker = os.path.join(bdir, ".rigby_bepinex_version")
@@ -1047,7 +1086,6 @@ class APIHandler(BaseHTTPRequestHandler):
             plugins_dir = os.path.join(bdir, "plugins")
             os.makedirs(plugins_dir, exist_ok=True)
             if url.lower().endswith(".dll"):
-                # Direct .dll download (e.g. GitHub release asset) -> drop into plugins/.
                 dest = os.path.join(plugins_dir, os.path.basename(urllib.parse.urlsplit(url).path))
                 ok, msg = _download(url, dest)
                 if not ok:
@@ -1098,6 +1136,7 @@ class APIHandler(BaseHTTPRequestHandler):
 
         if _au_game_procs():
             return {"ok": False, "message": "Game is already running. Close it first before launching again."}
+        global _last_launch_ts
         now = time.time()
         if now - _last_launch_ts < 5.0:
             return {"ok": False, "message": "Game is launching, wait a moment before launching again."}
