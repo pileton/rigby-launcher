@@ -149,9 +149,6 @@ html, body {
 }
 
 .hero { display: flex; align-items: center; justify-content: center; gap: 16px; }
-      /* Compact centered cluster: version-picker | Play | gear+changelog.
-         .hero-right is min-width:140px to balance the version-picker (140px) so
-         the middle Play button lands exactly on center. */
       .hero-center { margin: 0 auto; }
       .hero-right { min-width: 140px; }
 
@@ -384,13 +381,10 @@ html, body {
 .cl-item { font-size: 13px; color: var(--placeholder); margin-bottom: 6px; line-height: 1.5; }
 .cl-item::before { content: '\\2022'; color: var(--slider); display: inline-block; width: 16px; }
 
-/* hide scrollbars on all scrollable menus/lists (Mods list, sidebar, settings, changelog) */
 ::-webkit-scrollbar { width: 0; height: 0; background: transparent; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: transparent; border-radius: 3px; }
 html { scrollbar-width: none; }
-/* dropdowns/settings are scrollable (overflow:auto) but the thumb/track are
-   invisible (overlay-style) — no visible bar, still scroll with mouse/touchpad. */
 .dropdown-menu::-webkit-scrollbar, #main::-webkit-scrollbar, #settings-area::-webkit-scrollbar { width: 0; height: 0; }
 .dropdown-menu::-webkit-scrollbar-thumb, #main::-webkit-scrollbar-thumb, #settings-area::-webkit-scrollbar-thumb { background: transparent; }
 .dropdown-menu, #main, #settings-area { scrollbar-width: none; scrollbar-color: transparent transparent; }
@@ -459,7 +453,6 @@ html { scrollbar-width: none; }
 .cfg-btn {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 11px 24px; font-size: 14px; font-family: inherit;
-  /* double-stack the translucent fill so the button reads more solid */
   background: linear-gradient(rgba(255,255,255,0), rgba(255,255,255,0)), linear-gradient(var(--input-bg), var(--input-bg)), var(--input-bg);
   border: 1px solid var(--hover-border);
   border-radius: 999px; color: var(--text); cursor: pointer;
@@ -531,7 +524,6 @@ html { scrollbar-width: none; }
 }
 #app { position: relative; z-index: 2; display: flex; flex-direction: column; height: 100vh; }
 
-/* ---- custom dialog (replaces alert/confirm webview popups) ---- */
 #dlg-overlay {
   position: fixed; inset: 0; display: grid; place-items: center;
   padding: 16px; opacity: 0; visibility: hidden; pointer-events: none;
@@ -576,7 +568,6 @@ html { scrollbar-width: none; }
 .dlg-btn:focus-visible { outline: 3px solid rgba(255, 255, 255, 0.85); outline-offset: 4px; }
 .dlg-btn-yes:hover { background: #ff5257; border-color: #ff5257; }
 .dlg-btn-no:hover { background: #2b2b2b; border-color: #333333; }
-/* blue variant: updates + regular (non-destructive) confirms */
 .dlg.info .dlg-shape { fill: #0091FF; }
 .dlg.info .dlg-btn-yes { border-color: #0091FF; background: #0091FF; }
 .dlg.info .dlg-btn-yes:hover { background: #2ba0ff; border-color: #2ba0ff; }
@@ -794,6 +785,14 @@ html { scrollbar-width: none; }
     </button>
     <div id="cl-title">Changelog</div>
     <div class="cl-entry">
+      <div class="cl-ver">v0.7</div>
+      <div class="cl-date">October 2026</div>
+      <div class="cl-item">Fixed itch.io profile pictures not loading</div>
+      <div class="cl-item">Game Directory now shows the correct folder and the button opens it</div>
+      <div class="cl-item">Resource Watchdog options animate in and out instead of popping</div>
+      <div class="cl-item">New pop up menu that replaces the native pop up (its cooler)</div>
+    </div>
+    <div class="cl-entry">
       <div class="cl-ver">v0.6</div>
       <div class="cl-date">September 2026</div>
       <div class="cl-item">Added AUnlocker v1.3.1 mod</div>
@@ -801,10 +800,6 @@ html { scrollbar-width: none; }
       <div class="cl-item">Changelog clock icon now spins open/close</div>
       <div class="cl-item">Balanced the hero row so version-picker / Play / gear never overlap on resize</div>
       <div class="cl-item">Mod icons now lazy-load and are cached to disk to cut image decode RAM</div>
-      <div class="cl-item">Fixed itch.io profile pictures not loading</div>
-      <div class="cl-item">Game Directory now shows the correct folder and the button opens it</div>
-      <div class="cl-item">Resource Watchdog options animate in and out instead of popping</div>
-      <div class="cl-item">New pop up menu that replaces the native pop up (its cooler)</div>
     </div>
     <div class="cl-entry">
       <div class="cl-ver">v0.5</div>
@@ -1133,7 +1128,6 @@ let autoLaunchArmed = false;
 
 function $(id) { return document.getElementById(id); }
 
-/* ---- custom dialog: replaces alert()/confirm() webview popups ---- */
 let dialogState = { onConfirm: null, onDismiss: null };
 
 function showDialog(opts) {
@@ -1151,8 +1145,6 @@ function showDialog(opts) {
     $('dlg-actions').classList.add('single');
   }
   $('dlg').classList.toggle('info', opts.variant === 'info');
-  /* Keep long messages inside the card: shrink the description if it would
-     collide with the action buttons. */
   const desc = $('dlg-desc');
   desc.style.fontSize = '';
   const actionsTop = $('dlg-actions').getBoundingClientRect().top;
@@ -1542,9 +1534,6 @@ function buildSettingsPayload() {
   });
 }
 async function flushPendingSettings() {
-  /* Drain the localStorage write-ahead log on startup, before the first
-     /api/status poll, so a save aborted on the previous close reaches
-     settings.json + the in-memory settings and is reflected in the form. */
   const pending = localStorage.getItem('rigby-settings-pending');
   if (!pending) return;
   try { await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: pending }); } catch(e) {}
@@ -1553,10 +1542,6 @@ async function flushPendingSettings() {
 }
 
 async function saveSettings() {
-  /* Durable write-ahead: localStorage.setItem is synchronous and survives a
-     hard GTK/webview close (async fetch/sendBeacon to loopback aborts on
-     destroy). sendBeacon is the fast path for an immediate server write.
-     Scope: version / theme / settings toggles + inputs. */
   const payload = buildSettingsPayload();
   try { localStorage.setItem('rigby-settings-pending', payload); } catch(e) {}
   if (navigator.sendBeacon) {
