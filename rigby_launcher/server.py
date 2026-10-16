@@ -107,16 +107,16 @@ MODS = [
     {
         "id": "hydra",
         "name": "Hydra",
-        "version": "18I",
+        "version": ["19I", "18I"],
         "categories": ["Menu"],
         "description": "Hydra mod menu for Among Us with a wide range of gameplay features.",
         "image": "https://files.catbox.moe/ajyi00.png",
-        "url": "https://github.com/MrDiamond64/Hydra/releases/download/v2.0.0/HydraMenu.dll",
+        "url": "https://github.com/MrDiamond64/Hydra/releases/download/v2.1.0/HydraMenu.dll",
         
         "bepinex": {
             "version": "6.0.0-be.785",
-            "win_x86": "https://github.com/MrDiamond64/Hydra/releases/download/v2.0.0/BepInEx-Unity.IL2CPP-win-x86-6.0.0-be.785+6abdba4.zip",
-            "win_x64": "https://github.com/MrDiamond64/Hydra/releases/download/v2.0.0/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.785+6abdba4.zip",
+            "win_x86": "https://github.com/MrDiamond64/Hydra/releases/download/v2.1.0/BepInEx-Unity.IL2CPP-win-x86-6.0.0-be.785+6abdba4.zip",
+            "win_x64": "https://github.com/MrDiamond64/Hydra/releases/download/v2.1.0/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.785+6abdba4.zip",
         },
     },
     {
@@ -153,6 +153,39 @@ for _m in MODS:
     _m["image"] = "/api/icon/" + _h
 
 
+def _proxy_image(url):
+    """Register a remote image for the /api/icon disk-cache route and return
+    its same-origin URL, so avatars load reliably and are cached like mod icons."""
+    if not url or url.startswith("/api/"):
+        return url or ""
+    _h = _icon_hash(url)
+    ICON_URLS[_h] = url
+    return "/api/icon/" + _h
+
+
+def _itch_profile(token):
+    """Return the itch.io user behind an OAuth token ({} on failure).
+
+    The legacy /api/1/key/me endpoint no longer returns profile fields, so use
+    the current https://api.itch.io/profile endpoint (Bearer) — it includes
+    cover_url (the account's profile picture) when one is set. The legacy
+    endpoint stays as a fallback for tokens it still serves."""
+    for url, headers in (
+        ("https://api.itch.io/profile", {"Authorization": "Bearer " + token}),
+        ("https://itch.io/api/1/key/me", {"Authorization": token}),
+    ):
+        try:
+            import requests
+            r = requests.get(url, headers=headers, timeout=10)
+            if r.status_code == 200:
+                user = r.json().get("user") or {}
+                if user:
+                    return user
+        except Exception:
+            pass
+    return {}
+
+
 def _prefetch_icons():
     """Warm the icon cache in a background thread so the first Mods open is instant."""
     try:
@@ -168,17 +201,55 @@ def _prefetch_icons():
     except Exception:
         pass
 
+BROWSE_STATE = {"busy": False, "done": False, "dir": "", "unavailable": False}
+
+
+def pick_directory():
+    """Open the first available native folder picker.
+
+    Returns (ran, path): ran=False when no picker could be started at all;
+    ran=True with an empty path means the user cancelled the dialog."""
+    pickers = [
+        ["zenity", "--file-selection", "--directory", "--title=Select Directory"],
+        ["kdialog", "--getexistingdirectory", "--title=Select Directory"],
+        ["python3", "-c", "import tkinter as tk; from tkinter import filedialog; root=tk.Tk(); root.withdraw(); print(filedialog.askdirectory())"],
+    ]
+    cmd = next((c for c in pickers if shutil.which(c[0])), None)
+    if cmd is None:
+        return False, ""
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+    except Exception:
+        return True, ""
+    path = (result.stdout or "").strip()
+    if result.returncode == 0 and path and os.path.isdir(path):
+        return True, path
+    return True, ""
+
+
+def _browse_worker():
+    """Run the picker off the request thread and persist the choice."""
+    try:
+        ran, path = pick_directory()
+        if path:
+            settings["game_dir"] = path
+            save_settings(settings)
+        BROWSE_STATE.update(busy=False, done=True, dir=path, unavailable=not ran)
+    except Exception:
+        BROWSE_STATE.update(busy=False, done=True, dir="", unavailable=True)
+
 SETTINGS_DEFAULTS = {
     "game_dir": "",
     "wine_prefix": os.path.join(HOME, ".wine-au"),
     "wine_binary": "wine",
     "auto_download": True,
-    "auto_update": False,
+
     "auto_launch": False,
     "beta_watchdog": False,
     "beta_terminate": False,
     "beta_limit_launcher": False,
     "theme": "dark",
+    "bg_style": "gradient_waves",
     "launch_delay": 5,
     "fixer_custom_dir": "",
     "installed_version": "",
@@ -193,7 +264,9 @@ def load_settings():
     if os.path.exists(SETTINGS_FILE):
         try:
             with open(SETTINGS_FILE) as f:
-                return {**SETTINGS_DEFAULTS, **json.load(f)}
+                settings = {**SETTINGS_DEFAULTS, **json.load(f)}
+                settings["bg_style"] = "gradient_waves"
+                return settings
         except:
             pass
     return dict(SETTINGS_DEFAULTS)
@@ -446,9 +519,16 @@ class APIHandler(BaseHTTPRequestHandler):
                         active_token = f.read().strip()
                 except:
                     pass
+            out = []
             for acc in accounts:
-                acc["active"] = acc.get("token", "") == active_token
-            self._send_json({"accounts": accounts, "max": 5})
+                row = dict(acc)
+                row["active"] = acc.get("token", "") == active_token
+                row["avatar_url"] = _proxy_image(acc.get("avatar_url", ""))
+                out.append(row)
+            self._send_json({"accounts": out, "max": 5})
+
+        elif path == "/api/browse/status":
+            self._send_json(dict(BROWSE_STATE))
 
         elif path == "/api/fixer/detect-dir":
             detected = self._detect_fixer_dir()
@@ -535,8 +615,27 @@ class APIHandler(BaseHTTPRequestHandler):
             self._send_json({"ok": True, "selected": selected_version})
 
         elif parsed.path == "/api/browse":
-            selected = self._pick_directory()
-            self._send_json({"ok": bool(selected), "dir": selected or ""})
+            if BROWSE_STATE["busy"]:
+                self._send_json({"ok": True, "busy": True})
+            else:
+                BROWSE_STATE.update(busy=True, done=False, dir="", unavailable=False)
+                threading.Thread(target=_browse_worker, daemon=True).start()
+                self._send_json({"ok": True, "busy": True})
+
+        elif parsed.path == "/api/open-folder":
+            gd = detect_game_dir() or settings.get("game_dir", "")
+            if gd and os.path.isdir(gd):
+                opener = "explorer" if sys.platform == "win32" else "xdg-open"
+                if not shutil.which(opener):
+                    self._send_json({"ok": False, "message": "No file manager launcher found on this system."})
+                else:
+                    try:
+                        subprocess.Popen([opener, gd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        self._send_json({"ok": True, "dir": gd})
+                    except Exception as e:
+                        self._send_json({"ok": False, "message": str(e)})
+            else:
+                self._send_json({"ok": False, "message": "No game directory found yet — install the game first."})
 
         elif parsed.path == "/api/download":
             version = data.get("version", selected_version)
@@ -612,23 +711,6 @@ class APIHandler(BaseHTTPRequestHandler):
         else:
             self._send_json({"error": "unknown endpoint"}, 404)
 
-    def _pick_directory(self):
-        pickers = [
-            ["zenity", "--file-selection", "--directory", "--title=Select Directory"],
-            ["kdialog", "--getexistingdirectory", "--title=Select Directory"],
-            ["python3", "-c", "import tkinter as tk; from tkinter import filedialog; root=tk.Tk(); root.withdraw(); print(filedialog.askdirectory())"],
-        ]
-        for cmd in pickers:
-            try:
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-                if result.returncode == 0:
-                    path = result.stdout.strip()
-                    if path and os.path.isdir(path):
-                        return path
-            except:
-                continue
-        return ""
-
     def _get_wine_version(self):
         try:
             result = subprocess.run(["wine", "--version"], capture_output=True, text=True, timeout=5)
@@ -669,16 +751,21 @@ class APIHandler(BaseHTTPRequestHandler):
                     if token:
                         self.__class__.fixer_status["logged_in"] = True
                         self.__class__.fixer_status["token"] = token
-                        try:
-                            import requests
-                            headers = {"Authorization": token}
-                            resp = requests.get("https://itch.io/api/1/key/me", headers=headers, timeout=10)
-                            if resp.status_code == 200:
-                                user = resp.json().get("user", {})
-                                self.__class__.fixer_status["username"] = user.get("username") or user.get("display_name") or "User"
-                                self.__class__.fixer_status["avatar_url"] = user.get("cover_url") or user.get("avatar_url") or ""
-                        except:
-                            pass
+                        user = _itch_profile(token)
+                        if user:
+                            username = user.get("username") or user.get("display_name") or "User"
+                            avatar = user.get("cover_url") or user.get("avatar_url") or ""
+                            self.__class__.fixer_status["username"] = username
+                            self.__class__.fixer_status["avatar_url"] = avatar
+                            accounts = settings.get("accounts", [])
+                            changed = False
+                            for acc in accounts:
+                                if acc.get("token") == token and (acc.get("username") != username or acc.get("avatar_url", "") != avatar):
+                                    acc["username"] = username
+                                    acc["avatar_url"] = avatar
+                                    changed = True
+                            if changed:
+                                save_settings(settings)
                         return
                 except:
                     pass
@@ -741,15 +828,10 @@ class APIHandler(BaseHTTPRequestHandler):
                 return
             username = "User"
             avatar_url = ""
-            try:
-                import requests
-                r = requests.get("https://itch.io/api/1/key/me", headers={"Authorization": token}, timeout=10)
-                if r.status_code == 200:
-                    u = r.json().get("user", {})
-                    username = u.get("username", "User")
-                    avatar_url = u.get("cover_url", "")
-            except:
-                pass
+            u = _itch_profile(token)
+            if u:
+                username = u.get("username") or u.get("display_name") or "User"
+                avatar_url = u.get("cover_url") or u.get("avatar_url") or ""
             accounts = list(settings.get("accounts", []))
             accounts.append({"token": token, "username": username, "avatar_url": avatar_url})
             settings["accounts"] = accounts
@@ -866,7 +948,7 @@ class APIHandler(BaseHTTPRequestHandler):
                 if os.path.exists(binp):
                     os.chmod(binp, 0o755)
                 return {"ok": True, "message": f"Launcher updated to {info.get('latest_version')}. Restart the launcher to use it.", "version": info.get("latest_version")}
-            # Non-root: portable install into ~/.local (no dpkg -i, works on Mint/Debian without sudo)
+                
             local = os.path.join(HOME, ".local")
             self._copy_tree(src_usr, local)
             binp = os.path.join(local, "bin", "rigby-launcher")
