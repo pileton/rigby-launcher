@@ -8,7 +8,7 @@ also join our discord server
 
 [![Discord](https://invidget.switchblade.xyz/MPzuWvg2BT?theme=dark)](https://discord.gg/MPzuWvg2BT)
 
-![Rigby Launcher](screenshot.png)
+![Rigby Launcher](1.png)
 
 ## Features
 
