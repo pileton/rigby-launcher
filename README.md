@@ -43,12 +43,12 @@ makepkg -si
 > On a Wayland-only session `makepkg -si` can fail because WebKit2GTK needs an X
 > display at build time. Install `xwayland` (or use an X11 session) and make sure
 > `base-devel`, `webkit2gtk-4.1` and `gtk3` are installed first. A pre-built
-> `rigby-launcher-0.6-1-any.pkg.tar.zst` is also published if building fails.
+> `rigby-launcher-0.7-1-any.pkg.tar.zst` is also published if building fails.
 
 #### Debian/Ubuntu (.deb)
 
 ```bash
-sudo dpkg -i rigby-launcher_0.6_all.deb
+sudo dpkg -i rigby-launcher_0.7_all.deb
 sudo apt install -f
 ```
 
@@ -70,8 +70,7 @@ python -m rigby_launcher
 
 Or download the pre-built executable from Releases.
 
-> The launcher launches `Among Us.exe`. On Windows (0.6+) it is started
-> natively (no Wine needed). On Linux it is launched through Wine, so Wine must
+> On Linux it is launched through Wine, so Wine must
 > be installed (`pacman -S wine` / `apt install wine`); if the launcher can't
 > find your game, point **Settings -> Game Directory** at your Among Us install
 > folder.
