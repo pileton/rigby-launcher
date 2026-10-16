@@ -20,7 +20,7 @@ ITCH_CLIENT_ID = "1ba9b4bfa1ac7759e8420eed4ec863ba"
 OAUTH_PORT = 7890
 
 LAUNCHER_REPO = "pileton/rigby-launcher"
-LAUNCHER_VERSION = "0.6"
+LAUNCHER_VERSION = "0.7"
 
 RELEASES = {
     "19I": "https://github.com/jogamerforgames2021/AmongUsLauncherNew/releases/download/19I/app.zip",
