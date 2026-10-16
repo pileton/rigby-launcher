@@ -102,7 +102,7 @@ def _download(url, dest_path):
         last = last or str(e)
     return False, ("Could not download the file (check your network and that the "
                  "URL is reachable): " + last[:300])
-    
+
 MODS = [
     {
         "id": "hydra",
@@ -112,7 +112,6 @@ MODS = [
         "description": "Hydra mod menu for Among Us with a wide range of gameplay features.",
         "image": "https://files.catbox.moe/ajyi00.png",
         "url": "https://github.com/MrDiamond64/Hydra/releases/download/v2.1.0/HydraMenu.dll",
-        
         "bepinex": {
             "version": "6.0.0-be.785",
             "win_x86": "https://github.com/MrDiamond64/Hydra/releases/download/v2.1.0/BepInEx-Unity.IL2CPP-win-x86-6.0.0-be.785+6abdba4.zip",
@@ -201,6 +200,7 @@ def _prefetch_icons():
     except Exception:
         pass
 
+
 BROWSE_STATE = {"busy": False, "done": False, "dir": "", "unavailable": False}
 
 
@@ -237,6 +237,7 @@ def _browse_worker():
         BROWSE_STATE.update(busy=False, done=True, dir=path, unavailable=not ran)
     except Exception:
         BROWSE_STATE.update(busy=False, done=True, dir="", unavailable=True)
+
 
 SETTINGS_DEFAULTS = {
     "game_dir": "",
@@ -281,6 +282,7 @@ def save_settings(settings):
 settings = load_settings()
 
 selected_version = settings.get("selected_version") or selected_version
+
 
 def _au_game_procs():
     """Return [(pid, cpu_pct, rss_bytes, args)] for running Among Us processes."""
@@ -948,7 +950,6 @@ class APIHandler(BaseHTTPRequestHandler):
                 if os.path.exists(binp):
                     os.chmod(binp, 0o755)
                 return {"ok": True, "message": f"Launcher updated to {info.get('latest_version')}. Restart the launcher to use it.", "version": info.get("latest_version")}
-                
             local = os.path.join(HOME, ".local")
             self._copy_tree(src_usr, local)
             binp = os.path.join(local, "bin", "rigby-launcher")
