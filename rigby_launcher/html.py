@@ -126,6 +126,10 @@ html, body {
   font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-size: 15px;
   overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  -moz-user-select: none;
 }
 
 #titlebar { display: flex; align-items: center; height: 52px; padding: 0 20px; background: rgba(0,0,0,0.4); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid rgba(255,255,255,0.04); flex-shrink: 0; }
@@ -152,7 +156,7 @@ html, body {
       .hero-right { min-width: 140px; }
 
 .version-picker .dropdown-btn { min-width: 140px; padding: 12px 16px; font-size: 14px; }
-.version-picker .dropdown-menu { min-width: 160px; }
+.version-picker .dropdown-menu { min-width: 140px; }
 
 .dl-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 10px;
@@ -163,7 +167,7 @@ html, body {
   backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
   transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
 }
-.dl-btn:hover { background: var(--hover); border-color: var(--button-border); }
+.dl-btn:hover { background: var(--hover); border-color: var(--hover-border); }
 .dl-btn:active { transform: scale(0.97); }
 .dl-btn:disabled { opacity: 0.4; cursor: default; transform: none; }
 .dl-btn:disabled:hover { background: var(--button); border-color: var(--button-border); }
@@ -197,15 +201,19 @@ html, body {
   display: flex; flex-direction: column; gap: 32px;
   max-height: 0;
   opacity: 0;
+  visibility: hidden;
   overflow: hidden;
   transform: translateY(-6px);
-  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.24s ease, transform 0.3s ease;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.24s ease, transform 0.3s ease, visibility 0s linear 0.24s;
 }
 #settings-area.open {
-  max-height: 760px;
+  max-height: 70vh;
   opacity: 1;
-  overflow: visible;
+  visibility: visible;
+  overflow-y: auto;
+  overflow-x: hidden;
   transform: translateY(0);
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.24s ease, transform 0.3s ease, visibility 0s;
 }
 
 .section { display: flex; flex-direction: column; gap: 10px; }
@@ -244,7 +252,7 @@ html, body {
 .c-slider { flex: 1; position: relative; height: 28px; display: flex; align-items: center; cursor: pointer; touch-action: none; overflow: hidden; border-radius: 10px; }
 .c-slider-track { position: absolute; left: 0; right: 0; height: 7px; background: var(--card); border-radius: 10px; pointer-events: none; }
 .c-slider-fill { position: absolute; left: 0; height: 7px; background: var(--slider); border-radius: 10px; pointer-events: none; transition: width 0.18s ease-out; }
-.c-slider-thumb { position: absolute; width: 28px; height: 22px; background: #fff; border-radius: 11px; box-shadow: 0 1px 4px rgba(0,0,0,0.3); top: 50%; margin-top: -11px; pointer-events: none; transition: left 0.18s ease-out; }
+.c-slider-thumb { position: absolute; width: 36px; height: 22px; background: #fff; border-radius: 11px; box-shadow: 0 1px 4px rgba(0,0,0,0.3); top: 50%; margin-top: -11px; pointer-events: none; transition: left 0.18s ease-out; }
 
 .dropdown { position: relative; }
 .dropdown-btn {
@@ -255,7 +263,7 @@ html, body {
   cursor: pointer; white-space: nowrap;
   transition: background 0.2s ease, border-color 0.2s ease;
 }
-.dropdown-btn:hover { background: var(--hover); border-color: var(--button-border); }
+.dropdown-btn:hover { background: var(--hover); border-color: var(--hover-border); }
 .dropdown-btn:active { background: var(--hover); }
 .dropdown-btn span { flex: 1; text-align: left; }
 .dropdown-btn svg { width: 16px; height: 16px; margin-left: auto; opacity: 0.6; }
@@ -265,12 +273,12 @@ html, body {
   display: flex; flex-direction: column; gap: 1px;
   border: 1px solid var(--element-border); border-radius: 14px;
   padding: 4px; overflow: hidden; max-height: 50vh; z-index: 100;
-  opacity: 0; transform: translateY(-6px) scale(0.96);
+  opacity: 0; visibility: hidden; transform: translateY(-6px) scale(0.96);
   pointer-events: none;
   backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
 }
-.dropdown-menu.open { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; overflow-y: auto; }
+.dropdown-menu.open { opacity: 1; visibility: visible; transform: translateY(0) scale(1); pointer-events: auto; overflow-y: auto; transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s; }
 .dropdown-item {
   padding: 10px 14px; font-size: 13px;
   color: var(--dropdown-item); cursor: pointer;
@@ -317,7 +325,14 @@ html, body {
 }
 #fixer-overlay.open { display: flex; }
 .beta-warn { color: #fbbf24; font-size: 12px; margin-left: 4px; opacity: 0.95; }
-.beta-toggles { border-top: 1px solid var(--element-border); }
+.beta-toggles {
+  border-top: 1px solid var(--element-border);
+  padding: 10px 0 0 10px;
+  max-height: 240px; opacity: 1; overflow: hidden;
+  transition: max-height 0.18s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.14s ease,
+              padding-top 0.18s cubic-bezier(0.4, 0, 0.2, 1), border-top-color 0.18s ease;
+}
+.beta-toggles.collapsed { max-height: 0; opacity: 0; padding-top: 0; border-top-color: transparent; }
 #fixer-card {
   background: var(--card); border: 1px solid var(--card-border);
   border-radius: 20px; padding: 40px 48px; text-align: center;
@@ -376,9 +391,9 @@ html, body {
 html { scrollbar-width: none; }
 /* dropdowns/settings are scrollable (overflow:auto) but the thumb/track are
    invisible (overlay-style) — no visible bar, still scroll with mouse/touchpad. */
-.dropdown-menu::-webkit-scrollbar, #main::-webkit-scrollbar { width: 0; height: 0; }
-.dropdown-menu::-webkit-scrollbar-thumb, #main::-webkit-scrollbar-thumb { background: transparent; }
-.dropdown-menu, #main { scrollbar-width: none; scrollbar-color: transparent transparent; }
+.dropdown-menu::-webkit-scrollbar, #main::-webkit-scrollbar, #settings-area::-webkit-scrollbar { width: 0; height: 0; }
+.dropdown-menu::-webkit-scrollbar-thumb, #main::-webkit-scrollbar-thumb, #settings-area::-webkit-scrollbar-thumb { background: transparent; }
+.dropdown-menu, #main, #settings-area { scrollbar-width: none; scrollbar-color: transparent transparent; }
 
 #acct-pill {
   display: flex; align-items: center; gap: 6px;
@@ -400,11 +415,11 @@ html { scrollbar-width: none; }
   padding: 8px; min-width: 220px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.4);
   flex-direction: column; gap: 4px;
-  opacity: 0; transform: translateY(-6px) scale(0.96);
+  opacity: 0; visibility: hidden; transform: translateY(-6px) scale(0.96);
   pointer-events: none;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
 }
-.acct-drop.open { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+.acct-drop.open { opacity: 1; visibility: visible; transform: translateY(0) scale(1); pointer-events: auto; transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s; }
 .acct-item {
   display: flex; align-items: center; gap: 10px;
   padding: 8px 10px; border-radius: 10px;
@@ -438,8 +453,23 @@ html { scrollbar-width: none; }
   backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
   transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
 }
-.mods-btn:hover { background: var(--hover); border-color: var(--button-border); }
+.mods-btn:hover { background: var(--hover); border-color: var(--hover-border); }
 .mods-btn:active { transform: scale(0.97); }
+
+.cfg-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 24px; font-size: 14px; font-family: inherit;
+  /* double-stack the translucent fill so the button reads more solid */
+  background: linear-gradient(rgba(255,255,255,0), rgba(255,255,255,0)), linear-gradient(var(--input-bg), var(--input-bg)), var(--input-bg);
+  border: 1px solid var(--hover-border);
+  border-radius: 999px; color: var(--text); cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+.cfg-btn:hover {
+  background: linear-gradient(var(--hover), var(--hover)), linear-gradient(var(--input-bg), var(--input-bg)), var(--input-bg);
+  border-color: var(--focus-border);
+}
+.cfg-btn svg { width: 16px; height: 16px; }
 .mods-btn svg { width: 22px; height: 22px; }
 #mods-overlay {
   position: fixed; inset: 0; z-index: 9998;
@@ -500,6 +530,64 @@ html { scrollbar-width: none; }
   pointer-events: none !important;
 }
 #app { position: relative; z-index: 2; display: flex; flex-direction: column; height: 100vh; }
+
+/* ---- custom dialog (replaces alert/confirm webview popups) ---- */
+#dlg-overlay {
+  position: fixed; inset: 0; display: grid; place-items: center;
+  padding: 16px; opacity: 0; visibility: hidden; pointer-events: none;
+  background: var(--overlay); transition: opacity 0.2s ease, visibility 0s linear 0.2s; z-index: 10000;
+}
+#dlg-overlay.open { opacity: 1; visibility: visible; pointer-events: auto; transition: opacity 0.2s ease, visibility 0s; }
+.dlg {
+  position: relative; container-type: inline-size;
+  width: min(480px, calc(100vw - 32px)); aspect-ratio: 1060 / 520;
+  overflow: hidden; border-radius: 14.4% / 29.2%;
+  background: linear-gradient(var(--card), var(--card)), var(--bg);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.46); border: 1px solid var(--card-border);
+}
+.dlg-heading {
+  position: absolute; top: 15.2%; left: 7.1%;
+  display: flex; align-items: center; gap: 3.8cqw; white-space: nowrap;
+}
+.dlg-icon { display: block; flex: 0 0 6.52cqw; width: 6.52cqw; height: auto; overflow: visible; transform: translateY(-3px); }
+.dlg-shape { fill: #ff383d; stroke: none; }
+.dlg-mark { fill: none; stroke: #101010; stroke-width: 4.1; stroke-linecap: round; }
+.dlg-mark-dot { fill: #101010; }
+.dlg-title { margin: 0; color: var(--text); font-size: 5.6cqw; font-weight: 400; line-height: 1; letter-spacing: -0.025em; }
+.dlg-desc {
+  position: absolute; top: 37.2%; left: 6.3%; right: 6.3%; margin: 0;
+  color: var(--placeholder); font-size: 4.72cqw; font-weight: 400; line-height: 1.22; letter-spacing: -0.012em;
+}
+.dlg-actions {
+  position: absolute; right: 4.25%; bottom: 9.42%; left: 4.25%;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 2.9%; height: 27%;
+}
+.dlg-actions.single { grid-template-columns: 1fr; }
+.dlg-btn {
+  min-width: 0; padding: 0; position: relative; isolation: isolate;
+  overflow: hidden; border-radius: 999px; font: inherit; font-size: 5.5cqw;
+  font-weight: 400; line-height: 1; color: #f7f7f7; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; user-select: none;
+  transition: background-color 0.18s ease, border-color 0.18s ease;
+}
+.dlg-btn-yes { border: 1px solid #ff383d; background: #ff383d; box-shadow: none; }
+.dlg-btn-no { border: 1px solid #292929; background: #202020; box-shadow: none; }
+.dlg-btn span { position: relative; z-index: 1; }
+.dlg-btn:focus-visible { outline: 3px solid rgba(255, 255, 255, 0.85); outline-offset: 4px; }
+.dlg-btn-yes:hover { background: #ff5257; border-color: #ff5257; }
+.dlg-btn-no:hover { background: #2b2b2b; border-color: #333333; }
+/* blue variant: updates + regular (non-destructive) confirms */
+.dlg.info .dlg-shape { fill: #0091FF; }
+.dlg.info .dlg-btn-yes { border-color: #0091FF; background: #0091FF; }
+.dlg.info .dlg-btn-yes:hover { background: #2ba0ff; border-color: #2ba0ff; }
+@media (max-width: 700px) {
+  .dlg { width: min(480px, calc(100vw - 24px)); min-width: 0; border-radius: 10.8% / 18.5%; }
+  .dlg-heading { top: 14%; left: 6.5%; gap: 2.8%; }
+  .dlg-title { font-size: 5.2cqw; }
+  .dlg-desc { top: 38%; left: 6.5%; right: 6.5%; font-size: 4.35cqw; letter-spacing: -0.025em; }
+  .dlg-actions { right: 4%; bottom: 10%; left: 4%; gap: 2.5%; height: 26%; }
+  .dlg-btn { font-size: 5cqw; }
+}
 </style>
 </head>
 <body>
@@ -589,10 +677,10 @@ html { scrollbar-width: none; }
                   <svg class="lucide" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
                 </div>
                 <div class="dropdown-menu">
-                  <div class="dropdown-item selected" data-val="dark" onclick="selectTheme('dark')">Dark</div>
-                  <div class="dropdown-item" data-val="white" onclick="selectTheme('white')">White</div>
-                  <div class="dropdown-item" data-val="red" onclick="selectTheme('red')">Red</div>
-                  <div class="dropdown-item" data-val="blue" onclick="selectTheme('blue')">Blue</div>
+                  <div class="dropdown-item selected" data-val="dark" onclick="selectTheme('dark'); event.stopPropagation()">Dark</div>
+                  <div class="dropdown-item" data-val="white" onclick="selectTheme('white'); event.stopPropagation()">White</div>
+                  <div class="dropdown-item" data-val="red" onclick="selectTheme('red'); event.stopPropagation()">Red</div>
+                  <div class="dropdown-item" data-val="blue" onclick="selectTheme('blue'); event.stopPropagation()">Blue</div>
                 </div>
               </div>
             </div>
@@ -620,13 +708,13 @@ html { scrollbar-width: none; }
               </div>
               <label class="toggle"><input type="checkbox" id="set-beta-watchdog" onchange="toggleBetaWatchdog()"><div class="toggle-track"></div></label>
             </div>
-            <div class="beta-toggles" id="beta-toggles" style="display:none;border-top:1px solid var(--element-border);padding:10px 0 0 10px">
+            <div class="beta-toggles collapsed" id="beta-toggles">
               <div class="config-inline" style="border-top:1px solid var(--element-border);padding-top:12px">
                 <div>
                   <div style="font-size:14px;font-weight:500">Terminate game on high resources <strong style="color:#ef4444">⚠ BETA</strong></div>
                   <div style="font-size:12px;color:var(--placeholder);margin-top:2px">⚠ BETA: end the Among Us process when usage stays high</div>
                 </div>
-                <label class="toggle"><input type="checkbox" id="set-beta-terminate" onchange="saveSettings()"><div class="toggle-track"></div></label>
+                <label class="toggle"><input type="checkbox" id="set-beta-terminate" onchange="toggleBetaTerminate(this)"><div class="toggle-track"></div></label>
               </div>
               <div class="config-inline" style="border-top:1px solid var(--element-border);padding-top:12px">
                 <div>
@@ -642,8 +730,8 @@ html { scrollbar-width: none; }
                 <div style="font-size:14px;font-weight:500">Launcher Updates</div>
                 <div style="font-size:12px;color:var(--placeholder);margin-top:2px">Reinstall or update Rigby Launcher itself</div>
               </div>
-              <button onclick="launcherUpdate()" style="padding:8px 16px;font-size:13px;background:var(--input-bg);border:1px solid var(--element-border);border-radius:10px;color:var(--text);cursor:pointer;font-family:inherit;transition:background 0.2s" onmouseover="this.style.background='var(--hover)'" onmouseout="this.style.background=''">
-                <svg class="lucide" viewBox="0 0 24 24" style="width:14px;height:14px;margin-right:6px;vertical-align:middle"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"/><path d="M7 12h10"/><path d="M12 7v10"/></svg>
+              <button class="cfg-btn" onclick="launcherUpdate()">
+                <svg class="lucide" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"/><path d="M7 12h10"/><path d="M12 7v10"/></svg>
                 Update launcher
               </button>
             </div>
@@ -656,7 +744,7 @@ html { scrollbar-width: none; }
                 <div class="c-slider" id="csl-delay" data-value="5">
                   <div class="c-slider-track"></div>
                   <div class="c-slider-fill" style="width:16.6%"></div>
-                  <div class="c-slider-thumb" style="left:calc(16.6% - 14px)"></div>
+                  <div class="c-slider-thumb" style="left:calc(16.6% - 18px)"></div>
                 </div>
                 <span class="slider-val" id="csl-delay-v" style="margin-left:-6px">5s</span>
               </div>
@@ -667,8 +755,8 @@ html { scrollbar-width: none; }
                 <div style="font-size:14px;font-weight:500">Itch Login Fixer</div>
                 <div style="font-size:12px;color:var(--placeholder);margin-top:2px">Authorize itch.io for game access</div>
               </div>
-              <button onclick="runFixer()" style="padding:8px 16px;font-size:13px;background:var(--input-bg);border:1px solid var(--element-border);border-radius:10px;color:var(--text);cursor:pointer;font-family:inherit;transition:background 0.2s" onmouseover="this.style.background='var(--hover)'" onmouseout="this.style.background=''">
-                <svg class="lucide" viewBox="0 0 24 24" style="width:14px;height:14px;margin-right:6px;vertical-align:middle"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <button class="cfg-btn" onclick="runFixer()">
+                <svg class="lucide" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 Run Fixer
               </button>
             </div>
@@ -678,10 +766,11 @@ html { scrollbar-width: none; }
               <div class="config-label">Game Directory</div>
               <div style="display:flex;gap:6px">
                 <input class="config-input" type="text" id="set-game-dir" style="flex:1" placeholder="Select..." onblur="saveSettings()">
-                <button class="icon-btn" onclick="browseGameDir()" style="width:42px;height:42px;flex-shrink:0;border:1px solid var(--element-border);border-radius:12px">
+                <button class="icon-btn" onclick="openGameDir()" title="Open game folder" style="width:42px;height:42px;flex-shrink:0;border:1px solid var(--element-border);border-radius:50%">
                   <svg class="lucide" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
                 </button>
               </div>
+              <div id="game-dir-path" style="font-size:12px;color:var(--placeholder);margin-top:6px;word-break:break-all;cursor:default"></div>
             </div>
             <div class="config-row">
               <div class="config-label">Wine Prefix</div>
@@ -691,7 +780,6 @@ html { scrollbar-width: none; }
               <div class="config-label">Wine Binary</div>
               <input class="config-input" type="text" id="set-wine-bin" placeholder="wine" onblur="saveSettings()">
             </div>
-
           </div>
         </div>
       </div>
@@ -708,13 +796,15 @@ html { scrollbar-width: none; }
     <div class="cl-entry">
       <div class="cl-ver">v0.6</div>
       <div class="cl-date">September 2026</div>
-      <div class="cl-item">Added AUnlocker v1.3.1 mod (single-click install into BepInEx)</div>
-      <div class="cl-item">Fixed Hydra/Malum menu text not appearing (was a missing Wine corefonts; auto-installed on launch)</div>
-      <div class="cl-item">Centered the Mods button directly under Play; tightened the vertical gap with no button overlap</div>
+      <div class="cl-item">Added AUnlocker v1.3.1 mod</div>
       <div class="cl-item">Settings gear now eases smoothly instead of snapping</div>
       <div class="cl-item">Changelog clock icon now spins open/close</div>
       <div class="cl-item">Balanced the hero row so version-picker / Play / gear never overlap on resize</div>
       <div class="cl-item">Mod icons now lazy-load and are cached to disk to cut image decode RAM</div>
+      <div class="cl-item">Fixed itch.io profile pictures not loading</div>
+      <div class="cl-item">Game Directory now shows the correct folder and the button opens it</div>
+      <div class="cl-item">Resource Watchdog options animate in and out instead of popping</div>
+      <div class="cl-item">New pop up menu that replaces the native pop up (its cooler)</div>
     </div>
     <div class="cl-entry">
       <div class="cl-ver">v0.5</div>
@@ -722,6 +812,7 @@ html { scrollbar-width: none; }
       <div class="cl-item">Added blue theme</div>
       <div class="cl-item">Added red theme</div>
       <div class="cl-item">Added mod manager with BepInEx integration (direct .dll installs from GitHub)</div>
+      <div class="cl-item">Fixed Hydra/Malum menu text not appearing (was a missing Wine corefonts; auto-installed on launch)</div>
       <div class="cl-item">In-launcher launcher reinstall/update</div>
       <div class="cl-item">Fixed spacing between dropdown options</div>
       <div class="cl-item">Nudged launch-delay slider labels</div>
@@ -788,8 +879,27 @@ html { scrollbar-width: none; }
   </div>
 </div>
 
+<div id="dlg-overlay">
+  <div class="dlg" id="dlg" role="alertdialog" aria-labelledby="dlg-title" aria-describedby="dlg-desc">
+    <div class="dlg-heading">
+      <svg class="dlg-icon" viewBox="0 0 72 66" aria-hidden="true">
+        <path class="dlg-shape" d="M27.1 5.8c4.1-6.9 13.7-6.9 17.8 0l25 42.6c3.8 6.5-.9 14.5-8.4 14.5H10.5c-7.5 0-12.2-8-8.4-14.5L27.1 5.8Z" />
+        <path class="dlg-mark" d="M36 18.5v17.1" />
+        <circle class="dlg-mark-dot" cx="36" cy="45.1" r="2.9" />
+      </svg>
+      <h1 class="dlg-title" id="dlg-title">Confirm ?</h1>
+    </div>
+    <p class="dlg-desc" id="dlg-desc">Are you sure?</p>
+    <div class="dlg-actions" id="dlg-actions">
+      <button class="dlg-btn dlg-btn-yes" type="button" id="dlg-yes" onclick="dialogYes()"><span>Yes</span></button>
+      <button class="dlg-btn dlg-btn-no" type="button" id="dlg-no" onclick="dialogNo()"><span>No</span></button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 import { Renderer, Program, Mesh, Triangle } from 'https://esm.sh/ogl@1.0.11';
+
 
 function hexToVec3(hex) {
   const h = hex.replace('#', '');
@@ -802,108 +912,115 @@ function hexToVec3(hex) {
 
 const vertexShader = `attribute vec2 uv; attribute vec2 position; varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position, 0, 1); }`;
 
-const fragmentShader = `precision highp float;
-
-uniform float uTime;
+const gradientWaveFragment = `precision highp float;
 uniform vec3 uResolution;
-uniform float uSpeed;
-uniform float uInnerLines;
-uniform float uOuterLines;
-uniform float uWarpIntensity;
-uniform float uRotation;
-uniform float uEdgeFadeWidth;
-uniform float uColorCycleSpeed;
-uniform float uBrightness;
-uniform vec3 uColor1;
-uniform vec3 uColor2;
-uniform vec3 uColor3;
+uniform float uTime;
 uniform vec2 uMouse;
-uniform float uMouseInfluence;
+uniform float uSpeed;
+uniform float uAmplitude;
+uniform float uWaveScale;
+uniform float uWaveRatio;
+uniform float uSwell;
+uniform float uTurbulence;
+uniform float uTilt;
+uniform float uZoom;
+uniform float uHeight;
+uniform float uFogDepth;
+uniform float uSteps;
+uniform float uBrightness;
+uniform float uOpacity;
+uniform float uGrain;
+uniform float uGrainIntensity;
+uniform float uParallax;
 uniform bool uEnableMouse;
+uniform vec3 uHorizonColor;
+uniform vec3 uWaveColor;
+uniform vec3 uCrestColor;
 
-#define HALF_PI 1.5707963
+const float MAX_DIST = 20000.0;
 
-float hashF(float n) { return fract(sin(n * 127.1) * 43758.5453123); }
-
-float smoothNoise(float x) {
-  float i = floor(x); float f = fract(x);
-  float u = f * f * (3.0 - 2.0 * f);
-  return mix(hashF(i), hashF(i + 1.0), u);
+float hash21(vec2 p) {
+  vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.x + p3.y) * p3.z);
 }
 
-float displaceA(float coord, float t) {
-  float result = sin(coord * 2.123) * 0.2;
-  result += sin(coord * 3.234 + t * 4.345) * 0.1;
-  result += sin(coord * 0.589 + t * 0.934) * 0.5;
-  return result;
+float plasma(vec3 r, vec2 freq, vec4 tc) {
+  float mx = r.x + tc.x;
+  mx += uSwell * sin((r.y + mx) / 20.0 + tc.y);
+  float my = r.y - tc.z;
+  my += uTurbulence * cos(r.x / 23.0 + tc.w);
+  return r.z - (sin(mx * freq.x) * uAmplitude + sin(my * freq.y) * uAmplitude + uHeight);
 }
 
-float displaceB(float coord, float t) {
-  float result = sin(coord * 1.345) * 0.3;
-  result += sin(coord * 2.734 + t * 3.345) * 0.2;
-  result += sin(coord * 0.189 + t * 0.934) * 0.3;
-  return result;
-}
-
-vec2 rotate2D(vec2 p, float angle) {
-  float c = cos(angle); float s = sin(angle);
-  return vec2(p.x * c - p.y * s, p.x * s + p.y * c);
+float raymarch(vec3 pos, vec3 dir, vec2 freq, vec4 tc) {
+  float dist = 0.0;
+  for (int i = 0; i < 128; i++) {
+    if (float(i) >= uSteps) break;
+    float dscene = plasma(pos + dist * dir, freq, tc);
+    if (abs(dscene) < 0.1) break;
+    dist += 0.9 * dscene;
+    if (!(abs(dist) < MAX_DIST)) return MAX_DIST;
+  }
+  return dist;
 }
 
 void main() {
-  vec2 coords = gl_FragCoord.xy / uResolution.xy;
-  coords = coords * 2.0 - 1.0;
-  coords = rotate2D(coords, uRotation);
+  float T = uTime * uSpeed;
+  vec2 freq = vec2(uWaveScale / 7.0, (uWaveScale * uWaveRatio) / 3.0);
+  vec4 tc = vec4(T / 0.130, T / 0.810, T / 0.200, T / 0.710);
+  float c, s;
+  float vfov = (3.14159 / 2.3) / max(uZoom, 0.05);
+  vec3 cam = vec3(0.0, 0.0, 30.0);
+  vec2 uv = (gl_FragCoord.xy / uResolution.xy) - 0.5;
+  uv.x *= uResolution.x / uResolution.y;
+  uv.y *= -1.0;
 
-  float halfT = uTime * uSpeed * 0.5;
-  float fullT = uTime * uSpeed;
+  vec3 dir = vec3(0.0, 0.0, -1.0);
+  float ulen = length(uv);
+  float xrot = vfov * ulen;
+  c = cos(xrot); s = sin(xrot);
+  dir = mat3(1.0, 0.0, 0.0, 0.0, c, -s, 0.0, s, c) * dir;
+  vec2 nuv = ulen > 1e-5 ? uv / ulen : vec2(1.0, 0.0);
+  c = nuv.x; s = nuv.y;
+  dir = mat3(c, -s, 0.0, s, c, 0.0, 0.0, 0.0, 1.0) * dir;
+  c = cos(uTilt); s = sin(uTilt);
+  dir = mat3(c, 0.0, s, 0.0, 1.0, 0.0, -s, 0.0, c) * dir;
 
-  float mouseWarp = 0.0;
   if (uEnableMouse) {
-    vec2 mPos = rotate2D(uMouse * 2.0 - 1.0, uRotation);
-    float mDist = length(coords - mPos);
-    mouseWarp = uMouseInfluence * exp(-mDist * mDist * 4.0);
+    float yaw = (uMouse.x - 0.5) * uParallax * 0.4;
+    float pitch = (uMouse.y - 0.5) * uParallax * 0.4;
+    c = cos(yaw); s = sin(yaw);
+    dir = mat3(c, 0.0, s, 0.0, 1.0, 0.0, -s, 0.0, c) * dir;
+    c = cos(pitch); s = sin(pitch);
+    dir = mat3(1.0, 0.0, 0.0, 0.0, c, -s, 0.0, s, c) * dir;
   }
 
-  float warpAx = coords.x + displaceA(coords.y, halfT) * uWarpIntensity + mouseWarp;
-  float warpAy = coords.y - displaceA(coords.x * cos(fullT) * 1.235, halfT) * uWarpIntensity;
-  float warpBx = coords.x + displaceB(coords.y, halfT) * uWarpIntensity + mouseWarp;
-  float warpBy = coords.y - displaceB(coords.x * sin(fullT) * 1.235, halfT) * uWarpIntensity;
+  float dist = raymarch(cam, dir, freq, tc);
+  vec3 pos = cam + dist * dir;
 
-  vec2 fieldA = vec2(warpAx, warpAy);
-  vec2 fieldB = vec2(warpBx, warpBy);
-  vec2 blended = mix(fieldA, fieldB, mix(fieldA, fieldB, 0.5));
+  float t = clamp(uFogDepth / max(dist, 0.001), 0.0, 1.0);
+  vec3 body = mix(uWaveColor, uCrestColor, clamp(pos.z * 0.08 + 0.5, 0.0, 1.0));
+  vec3 col = mix(uHorizonColor, body, t);
+  col *= uBrightness;
+  col = clamp(col, 0.0, 1.0);
 
-  float fadeTop = smoothstep(uEdgeFadeWidth, uEdgeFadeWidth + 0.4, blended.y);
-  float fadeBottom = smoothstep(-uEdgeFadeWidth, -(uEdgeFadeWidth + 0.4), blended.y);
-  float vMask = 1.0 - max(fadeTop, fadeBottom);
-
-  float tileCount = mix(uOuterLines, uInnerLines, vMask);
-  float scaledY = blended.y * tileCount;
-  float nY = smoothNoise(abs(scaledY));
-
-  float ridge = pow(
-    step(abs(nY - blended.x) * 2.0, HALF_PI) * cos(2.0 * (nY - blended.x)),
-    5.0
-  );
-
-  float lines = 0.0;
-  for (float i = 1.0; i < 3.0; i += 1.0) {
-    lines += pow(max(fract(scaledY), fract(-scaledY)), i * 2.0);
+  float alpha = clamp(t, 0.0, 1.0) * uOpacity;
+  if (uGrain > 0.5) {
+    float g = hash21(gl_FragCoord.xy + mod(uTime, 64.0) * 11.0);
+    alpha += (g - 0.5) * uGrainIntensity;
   }
-
-  float pattern = vMask * lines;
-
-  float cycleT = fullT * uColorCycleSpeed;
-  float rChannel = (pattern + lines * ridge) * (cos(blended.y + cycleT * 0.234) * 0.5 + 1.0);
-  float gChannel = (pattern + vMask * ridge) * (sin(blended.x + cycleT * 1.745) * 0.5 + 1.0);
-  float bChannel = (pattern + lines * ridge) * (cos(blended.x + cycleT * 0.534) * 0.5 + 1.0);
-
-  vec3 col = (rChannel * uColor1 + gChannel * uColor2 + bChannel * uColor3) * uBrightness;
-  float alpha = clamp(length(col), 0.0, 1.0);
-
-  gl_FragColor = vec4(col, alpha);
+  alpha = clamp(alpha, 0.0, 1.0);
+  gl_FragColor = vec4(col * alpha, alpha);
 }`;
+
+// Gradient Waves palettes per theme (gradient waves is now the only background)
+const THEME_COLORS = {
+  dark: ['#5227FF', '#FF9EFC', '#FFFFFF'],
+  white: ['#ffffff', '#FF9EFC', '#5227FF'],
+  red: ['#450a0a', '#FF9EFC', '#FFFFFF'],
+  blue: ['#011827', '#FF9EFC', '#FFFFFF']
+};
 
 const container = document.getElementById('waves');
 const renderer = new Renderer({ alpha: true, premultipliedAlpha: false, webgl2: false });
@@ -936,28 +1053,27 @@ window.addEventListener('resize', resize);
 resize();
 
 const geometry = new Triangle(gl);
-const rotationRad = (-45 * Math.PI) / 180;
-program = new Program(gl, {
-  vertex: vertexShader,
-  fragment: fragmentShader,
-  uniforms: {
+
+function uniformsFor(colors) {
+  return {
     uTime: { value: 0 },
     uResolution: { value: [gl.canvas.width, gl.canvas.height, gl.canvas.width / gl.canvas.height] },
-    uSpeed: { value: 0.3 },
-    uInnerLines: { value: 35 },
-    uOuterLines: { value: 36 },
-    uWarpIntensity: { value: 1 },
-    uRotation: { value: rotationRad },
-    uEdgeFadeWidth: { value: 0 },
-    uColorCycleSpeed: { value: 1 },
-    uBrightness: { value: 0.2 },
-    uColor1: { value: hexToVec3('#ffffff') },
-    uColor2: { value: hexToVec3('#ffffff') },
-    uColor3: { value: hexToVec3('#ffffff') },
     uMouse: { value: new Float32Array([0.5, 0.5]) },
-    uMouseInfluence: { value: 2 },
-    uEnableMouse: { value: true }
-  }
+    uSpeed: { value: 0.4 }, uAmplitude: { value: 2.5 }, uWaveScale: { value: 0.6 },
+    uWaveRatio: { value: 0.9 }, uSwell: { value: 35.0 }, uTurbulence: { value: 20.0 },
+    uTilt: { value: 1.11 }, uZoom: { value: 1.0 }, uHeight: { value: 5.5 },
+    uFogDepth: { value: 15.0 }, uSteps: { value: 70.0 }, uBrightness: { value: 1.0 },
+    uOpacity: { value: 1.0 }, uGrain: { value: 1.0 }, uGrainIntensity: { value: 0.05 },
+    uParallax: { value: 0.5 }, uEnableMouse: { value: true },
+    uHorizonColor: { value: hexToVec3(colors[0]) }, uWaveColor: { value: hexToVec3(colors[1]) },
+    uCrestColor: { value: hexToVec3(colors[2]) }
+  };
+}
+
+program = new Program(gl, {
+  vertex: vertexShader,
+  fragment: gradientWaveFragment,
+  uniforms: uniformsFor(THEME_COLORS.dark)
 });
 
 const mesh = new Mesh(gl, { geometry, program });
@@ -966,6 +1082,27 @@ container.appendChild(gl.canvas);
 
 gl.canvas.addEventListener('mousemove', handleMouseMove);
 gl.canvas.addEventListener('mouseleave', handleMouseLeave);
+
+let currentTheme = 'dark';
+
+function syncColors(colors) {
+  const u = program.uniforms;
+  u.uHorizonColor.value = hexToVec3(colors[0]);
+  u.uWaveColor.value = hexToVec3(colors[1]);
+  u.uCrestColor.value = hexToVec3(colors[2]);
+}
+
+window.applyBackground = function(theme) {
+  if (!gl) { setTimeout(function(){ window.applyBackground(theme); }, 100); return; }
+  theme = (['dark', 'white', 'red', 'blue'].includes(theme)) ? theme : 'dark';
+  syncColors(THEME_COLORS[theme] || THEME_COLORS.dark);
+  const uRes = [gl.canvas.width, gl.canvas.height, gl.canvas.width / gl.canvas.height];
+  if (program.uniforms.uResolution) program.uniforms.uResolution.value = uRes;
+  renderer.render({ scene: mesh });
+  currentTheme = theme;
+  window.currentTheme = theme;
+};
+window.applyBackground('dark');
 
 function update(time) {
   if (paused) return;
@@ -976,7 +1113,6 @@ function update(time) {
   currentMouse[1] += 0.05 * (targetMouse[1] - currentMouse[1]);
   program.uniforms.uMouse.value[0] = currentMouse[0];
   program.uniforms.uMouse.value[1] = currentMouse[1];
-
   renderer.render({ scene: mesh });
 }
 
@@ -998,12 +1134,67 @@ let autoLaunchArmed = false;
 
 function $(id) { return document.getElementById(id); }
 
+/* ---- custom dialog: replaces alert()/confirm() webview popups ---- */
+let dialogState = { onConfirm: null, onDismiss: null };
+
+function showDialog(opts) {
+  opts = opts || {};
+  $('dlg-title').textContent = opts.title || 'Confirm ?';
+  $('dlg-desc').textContent = opts.desc || '';
+  $('dlg-yes').querySelector('span').textContent = opts.yes || 'Yes';
+  const noBtn = $('dlg-no');
+  if (opts.no) {
+    noBtn.style.display = '';
+    noBtn.querySelector('span').textContent = opts.no;
+    $('dlg-actions').classList.remove('single');
+  } else {
+    noBtn.style.display = 'none';
+    $('dlg-actions').classList.add('single');
+  }
+  $('dlg').classList.toggle('info', opts.variant === 'info');
+  /* Keep long messages inside the card: shrink the description if it would
+     collide with the action buttons. */
+  const desc = $('dlg-desc');
+  desc.style.fontSize = '';
+  const actionsTop = $('dlg-actions').getBoundingClientRect().top;
+  let fs = parseFloat(getComputedStyle(desc).fontSize) || 40;
+  for (let i = 0; i < 8 && fs > 14 && desc.getBoundingClientRect().bottom > actionsTop - 6; i++) {
+    fs *= 0.88;
+    desc.style.fontSize = fs + 'px';
+  }
+  dialogState.onConfirm = opts.onConfirm || null;
+  dialogState.onDismiss = opts.onDismiss || null;
+  $('dlg-overlay').classList.add('open');
+}
+
+function hideDialog() { $('dlg-overlay').classList.remove('open'); }
+
+function dialogYes() {
+  const fn = dialogState.onConfirm;
+  dialogState = { onConfirm: null, onDismiss: null };
+  hideDialog();
+  if (fn) fn();
+}
+
+function dialogNo() {
+  const fn = dialogState.onDismiss;
+  dialogState = { onConfirm: null, onDismiss: null };
+  hideDialog();
+  if (fn) fn();
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && $('dlg-overlay').classList.contains('open')) dialogNo();
+});
+$('dlg-overlay').addEventListener('click', function(e) {
+  if (e.target === this) dialogNo();
+});
+
 function toggleSettings() {
   settingsOpen = !settingsOpen;
   $('settings-area').classList.toggle('open', settingsOpen);
   $('gear-btn').classList.toggle('active', settingsOpen);
-  $('main').style.overflow = settingsOpen ? 'auto' : 'hidden';
-  if (settingsOpen) refreshStatus();
+  if (settingsOpen) { $('settings-area').scrollTop = 0; refreshStatus(); }
 }
 
 function toggleDropdown(id) {
@@ -1016,7 +1207,7 @@ function toggleDropdown(id) {
 function selectDD(id, val) {
   const menu = document.querySelector('#' + id + ' .dropdown-menu');
   menu.querySelectorAll('.dropdown-item').forEach(e => e.classList.remove('selected'));
-  menu.querySelector('.dropdown-item[data-val="' + val + '"]').classList.add('selected');
+  const __ddEl = menu.querySelector('.dropdown-item[data-val="' + val + '"]'); if (__ddEl) __ddEl.classList.add('selected');
   menu.closest('.dropdown').querySelector('.dropdown-btn span').textContent = val;
   menu.classList.remove('open');
 }
@@ -1032,10 +1223,12 @@ function selectTheme(val) {
   if (val === 'white') document.documentElement.classList.add('white');
   else if (val === 'red') document.documentElement.classList.add('red');
   else if (val === 'blue') document.documentElement.classList.add('blue');
+  if (window.applyBackground && window.currentTheme !== val) window.applyBackground(val);
   saveSettings();
 }
 
 document.addEventListener('click', function(e) {
+  if (e.target.closest('.dropdown-item')) return;
   document.querySelectorAll('.dropdown-menu.open').forEach(menu => {
     if (!menu.closest('.dropdown') || !menu.closest('.dropdown').contains(e.target)) menu.classList.remove('open');
   });
@@ -1055,7 +1248,7 @@ document.querySelectorAll('.c-slider').forEach(sl => {
   function setPct(p) {
     sl.dataset.value = p;
     fill.style.width = p + '%';
-    thumb.style.left = 'calc(' + p + '% - 14px)';
+    thumb.style.left = 'calc(' + p + '% - 18px)';
     if (valEl && sl.id === 'csl-delay') {
       const sec = Math.max(1, Math.round(p / 100 * 30));
       valEl.textContent = sec + 's';
@@ -1137,7 +1330,7 @@ async function loadVersions() {
       item.dataset.val = v;
       item.textContent = v;
       if (isOld) item.title = 'This version may not be supported by Innersloth.';
-      item.onclick = function() { selectVer(v); };
+      item.onclick = function(e) { e.stopPropagation(); selectVer(v); };
       menu.appendChild(item);
     });
     $('ver-lbl').textContent = d.selected;
@@ -1154,9 +1347,13 @@ async function checkGameStatus() {
       else if (state.settings.theme === 'red') document.documentElement.classList.add('red');
       else if (state.settings.theme === 'blue') document.documentElement.classList.add('blue');
     }
+    if (window.applyBackground && state.settings) {
+      const _th = state.settings.theme || 'dark';
+      if (window.currentTheme !== _th) window.applyBackground(_th);
+    }
     if (state.latest_release && (state.versions || []).includes(state.latest_release) && state.latest_release !== state.installed_version) {
       $('update-badge').classList.add('show');
-      if (state.settings?.auto_update && !downloading) {
+      if (state.settings?.auto_download && !downloading) {
         updateToLatest();
       }
     } else {
@@ -1180,6 +1377,7 @@ async function checkGameStatus() {
       }, delay);
     }
   } catch(e) {}
+  loadAccts();
 }
 
 async function updateToLatest() {
@@ -1214,7 +1412,7 @@ async function handlePlay() {
     const r = await fetch('/api/launch', { method: 'POST' });
     const d = await r.json();
     if (d.ok === false) {
-      alert(d.message || 'Launch failed');
+      showDialog({ title: 'Launch Failed', desc: d.message || 'The game could not be launched.', yes: 'OK', variant: 'danger' });
     } else {
       checkGameStatus();
     }
@@ -1281,18 +1479,21 @@ async function refreshStatus() {
     const r = await fetch('/api/status');
     state = await r.json();
     const s = state.settings || {};
-    $('set-game-dir').value = s.game_dir || '';
+    // show the effective game dir (auto-detected for the selected version, else the saved path)
+    const gd = state.game_dir || s.game_dir || '';
+    $('set-game-dir').value = gd;
     $('set-wine-prefix').value = s.wine_prefix || '';
     $('set-wine-bin').value = s.wine_binary || 'wine';
-    $('set-auto-update').checked = s.auto_update === true;
+    if ($('game-dir-path')) $('game-dir-path').textContent = gd ? (gd + '  •  ' + (state.game_installed ? 'Ready' : 'Not installed')) : 'No game directory detected';
+    $('set-auto-update').checked = s.auto_download === true;
     $('set-auto-launch').checked = s.auto_launch === true;
     $('set-beta-watchdog').checked = s.beta_watchdog === true;
     if (s.beta_watchdog === true) {
-      $('beta-toggles').style.display = 'block';
+      $('beta-toggles').classList.remove('collapsed');
       $('set-beta-terminate').checked = s.beta_terminate === true;
       $('set-beta-limit').checked = s.beta_limit_launcher === true;
     } else {
-      $('beta-toggles').style.display = 'none';
+      $('beta-toggles').classList.add('collapsed');
     }
     const theme = s.theme || 'dark';
     $('theme-lbl').textContent = theme.charAt(0).toUpperCase() + theme.slice(1);
@@ -1302,6 +1503,7 @@ async function refreshStatus() {
     if (theme === 'white') document.documentElement.classList.add('white');
     else if (theme === 'red') document.documentElement.classList.add('red');
     else if (theme === 'blue') document.documentElement.classList.add('blue');
+    if (window.applyBackground && window.currentTheme !== theme) window.applyBackground(theme);
     const delay = s.launch_delay || 5;
     const dp = Math.round(delay / 30 * 100);
     const dsl = $('csl-delay');
@@ -1309,7 +1511,7 @@ async function refreshStatus() {
       dsl.dataset.value = dp;
       dsl.dataset.seconds = delay;
       dsl.querySelector('.c-slider-fill').style.width = dp + '%';
-      dsl.querySelector('.c-slider-thumb').style.left = 'calc(' + dp + '% - 14px)';
+      dsl.querySelector('.c-slider-thumb').style.left = 'calc(' + dp + '% - 18px)';
       const ve = $('csl-delay-v');
       if (ve) ve.textContent = delay + 's';
     }
@@ -1318,8 +1520,12 @@ async function refreshStatus() {
   } catch(e) {}
 }
 
-async function browseGameDir() {
-  try { const r = await fetch('/api/browse', { method: 'POST' }); const d = await r.json(); if (d.dir) $('set-game-dir').value = d.dir; } catch(e) {}
+async function openGameDir() {
+  try {
+    const r = await fetch('/api/open-folder', { method: 'POST' });
+    const d = await r.json();
+    if (!d.ok) showDialog({ title: 'Game Folder Not Found', desc: d.message || 'No game directory found yet — install the game first.', yes: 'OK', variant: 'danger' });
+  } catch(e) {}
 }
 
 function fmtSpeed(bps) { if (!bps || bps <= 0) return ''; if (bps >= 1e6) return (bps / 1e6).toFixed(1) + ' MB/s'; if (bps >= 1e3) return (bps / 1e3).toFixed(1) + ' KB/s'; return bps + ' B/s'; }
@@ -1328,7 +1534,7 @@ function buildSettingsPayload() {
     game_dir: $('set-game-dir').value,
     wine_prefix: $('set-wine-prefix').value,
     wine_binary: $('set-wine-bin').value,
-    auto_update: $('set-auto-update').checked,
+    auto_download: $('set-auto-update').checked,
     auto_launch: $('set-auto-launch').checked,
     beta_watchdog: $('set-beta-watchdog').checked,
     beta_terminate: $('set-beta-terminate').checked,
@@ -1364,12 +1570,23 @@ async function saveSettings() {
 
 function toggleBetaWatchdog() {
   const on = $('set-beta-watchdog').checked;
-  $('beta-toggles').style.display = on ? 'block' : 'none';
+  $('beta-toggles').classList.toggle('collapsed', !on);
   if (!on) {
     $('set-beta-terminate').checked = false;
     $('set-beta-limit').checked = false;
   }
   saveSettings();
+}
+
+function toggleBetaTerminate(el) {
+  if (!el.checked) { saveSettings(); return; }
+  showDialog({
+    title: 'Terminate Game ?',
+    desc: 'The game will be closed when resource usage stays high. Progress may be lost.',
+    yes: 'Enable', no: 'Cancel', variant: 'danger',
+    onConfirm: function() { saveSettings(); },
+    onDismiss: function() { el.checked = false; }
+  });
 }
 
 
@@ -1386,6 +1603,10 @@ document.addEventListener('click', function(e) {
   }
 });
 
+// itch.io gives accounts without a picture a generated frog avatar; embed one
+// so the account pill never falls back to a broken-image glyph.
+var FROG_AVATAR = 'data:image/png;base64,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';
+
 async function loadAccts() {
   try {
     var r = await fetch('/api/accounts');
@@ -1393,6 +1614,8 @@ async function loadAccts() {
     var list = document.getElementById('acct-list');
     list.innerHTML = '';
     var pillImg = document.getElementById('acct-pfp');
+    pillImg.onerror = function() { this.onerror = null; this.src = FROG_AVATAR; };
+    if (!pillImg.getAttribute('src')) { pillImg.src = FROG_AVATAR; }
     var pillName = document.getElementById('acct-name');
     var activeFound = false;
     d.accounts.forEach(function(acc) {
@@ -1401,12 +1624,13 @@ async function loadAccts() {
       if (acc.active) {
         item.classList.add('active');
         activeFound = true;
-        if (acc.avatar_url) { pillImg.src = acc.avatar_url; pillImg.style.display = ''; }
-        else { pillImg.src = ''; pillImg.style.display = 'none'; }
+        pillImg.src = acc.avatar_url || FROG_AVATAR;
+        pillImg.style.display = '';
         pillName.textContent = acc.username || 'Account';
       }
       var img = document.createElement('img');
-      img.src = acc.avatar_url || '';
+      img.onerror = function() { this.onerror = null; this.src = FROG_AVATAR; };
+      img.src = acc.avatar_url || FROG_AVATAR;
       img.width = 28;
       img.height = 28;
       item.appendChild(img);
@@ -1434,17 +1658,16 @@ async function loadAccts() {
       })(acc.token);
       item.appendChild(removeBtn);
       (function(tok) {
-        item.onclick = function() { switchAccount(tok); };
+        item.onclick = function(e) { e.stopPropagation(); switchAccount(tok); };
       })(acc.token);
       list.appendChild(item);
     });
     if (!activeFound && d.accounts.length > 0) {
-      if (d.accounts[0].avatar_url) { pillImg.src = d.accounts[0].avatar_url; pillImg.style.display = ''; }
-      else { pillImg.src = ''; pillImg.style.display = 'none'; }
+      pillImg.src = d.accounts[0].avatar_url || FROG_AVATAR;
+      pillImg.style.display = '';
       pillName.textContent = d.accounts[0].username || 'Account';
     }
     if (!activeFound && d.accounts.length === 0) {
-      pillImg.src = '';
       pillImg.style.display = 'none';
       pillName.textContent = 'Account';
     }
@@ -1453,8 +1676,16 @@ async function loadAccts() {
   } catch(e) {}
 }
 
-async function launcherUpdate() {
-  if (!confirm('Download and reinstall Rigby Launcher now?')) return;
+function launcherUpdate() {
+  showDialog({
+    title: 'Update Launcher ?',
+    desc: 'The newest Rigby Launcher build will be downloaded and reinstalled.',
+    yes: 'Update', no: 'Not now', variant: 'info',
+    onConfirm: doLauncherUpdate
+  });
+}
+
+async function doLauncherUpdate() {
   try {
     const r = await fetch('/api/launcher/update', { method: 'POST' });
     const d = await r.json();
@@ -1462,10 +1693,10 @@ async function launcherUpdate() {
       showFixerOverlay(d.message || 'Launcher updated', 'Restart the launcher to apply the update', true);
       setTimeout(hideFixerOverlay, 3500);
     } else {
-      alert(d.message || 'Launcher update failed');
+      showDialog({ title: 'Update Failed', desc: d.message || 'Could not update the launcher.', yes: 'OK', variant: 'danger' });
     }
   } catch(e) {
-    alert('Launcher update failed');
+    showDialog({ title: 'Update Failed', desc: 'Could not update the launcher.', yes: 'OK', variant: 'danger' });
   }
 }
 
@@ -1474,8 +1705,8 @@ async function addAccount() {
     var r = await fetch('/api/accounts/add', { method: 'POST' });
     var d = await r.json();
     if (d.ok) { loadAccts(); }
-    else { alert(d.message || 'Failed to add account'); }
-  } catch(e) { alert('Network error'); }
+    else { showDialog({ title: 'Add Account Failed', desc: d.message || 'The account could not be added.', yes: 'OK', variant: 'danger' }); }
+  } catch(e) { showDialog({ title: 'Network Error', desc: 'Could not reach the launcher service.', yes: 'OK', variant: 'danger' }); }
 }
 
 async function switchAccount(token) {
@@ -1487,13 +1718,21 @@ async function switchAccount(token) {
   document.getElementById('acct-drop').classList.remove('open');
 }
 
-async function removeAccount(token) {
-  if (!confirm('Remove this account?')) return;
-  await fetch('/api/accounts/remove', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({token: token})
+function removeAccount(token) {
+  showDialog({
+    title: 'Remove Account ?',
+    desc: 'This account will be removed. This cannot be canceled.',
+    yes: 'Remove', no: 'Cancel', variant: 'danger',
+    onConfirm: async function () {
+      try {
+        await fetch('/api/accounts/remove', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({token: token})
+        });
+        loadAccts();
+      } catch (e) {}
+    }
   });
-  loadAccts();
 }
 
 let modsState = {version: '', category: ''};
@@ -1581,26 +1820,46 @@ function renderMods() {
   $('mods-list').innerHTML = html;
 }
 
-async function modInstall(btn) {
+function modInstall(btn) {
   const id = btn.dataset.id;
-  if (!confirm('Install this mod? BepInEx will be set up automatically if it is missing.')) return;
-  try {
-    const r = await fetch('/api/mods/install/' + id, { method: 'POST' });
-    const d = await r.json();
-    alert(d.message || (d.ok ? 'Installed' : 'Failed'));
-    if (d.ok) loadMods();
-  } catch(e) { alert('Install failed'); }
+  showDialog({
+    title: 'Install Mod ?',
+    desc: 'BepInEx will be set up automatically if it is missing.',
+    yes: 'Install', no: 'Cancel', variant: 'info',
+    onConfirm: async function () {
+      try {
+        const r = await fetch('/api/mods/install/' + id, { method: 'POST' });
+        const d = await r.json();
+        if (d.ok) {
+          showDialog({ title: 'Mod Installed', desc: d.message || 'The mod was installed.', yes: 'OK', variant: 'info' });
+          loadMods();
+        } else {
+          showDialog({ title: 'Install Failed', desc: d.message || 'The mod could not be installed.', yes: 'OK', variant: 'danger' });
+        }
+      } catch(e) { showDialog({ title: 'Install Failed', desc: 'The mod could not be installed.', yes: 'OK', variant: 'danger' }); }
+    }
+  });
 }
 
-async function modRemove(btn) {
+function modRemove(btn) {
   const id = btn.dataset.id;
-  if (!confirm('Remove this mod?')) return;
-  try {
-    const r = await fetch('/api/mods/remove/' + id, { method: 'POST' });
-    const d = await r.json();
-    alert(d.message || (d.ok ? 'Removed' : 'Failed'));
-    if (d.ok) loadMods();
-  } catch(e) { alert('Remove failed'); }
+  showDialog({
+    title: 'Remove Mod ?',
+    desc: 'This mod will be removed from the game.',
+    yes: 'Remove', no: 'Cancel', variant: 'danger',
+    onConfirm: async function () {
+      try {
+        const r = await fetch('/api/mods/remove/' + id, { method: 'POST' });
+        const d = await r.json();
+        if (d.ok) {
+          showDialog({ title: 'Mod Removed', desc: d.message || 'The mod was removed.', yes: 'OK', variant: 'info' });
+          loadMods();
+        } else {
+          showDialog({ title: 'Remove Failed', desc: d.message || 'The mod could not be removed.', yes: 'OK', variant: 'danger' });
+        }
+      } catch(e) { showDialog({ title: 'Remove Failed', desc: 'The mod could not be removed.', yes: 'OK', variant: 'danger' }); }
+    }
+  });
 }
 
 loadVersions();
