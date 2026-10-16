@@ -6,10 +6,10 @@ pkgdesc="Rigby Launcher — a native launcher for Among Us with game version man
 arch=('any')
 url="https://github.com/pileton/rigby-launcher"
 license=('custom: Rigby Launcher License')
-depends=('python>=3.8' 'python-gobject' 'webkit2gtk-4.1' 'wine')
+depends=('python>=3.8' 'python-gobject' 'webkit2gtk-4.1' 'python-requests' 'wine')
 makedepends=('python-setuptools')
 source=("$pkgname-$pkgver.tar.gz")
-sha256sums=('6e39a80e20a3b9e336dfdbea8a221c5be0e950b1e2dea11f33d84c33e4b90ba3')
+sha256sums=('edc80f7fc1c0c265ee2cd21293b09e3f4b7108548938cfa1a52b4970c2ed071c')
 
 package() {
   cd "$srcdir/$pkgname-$pkgver"
