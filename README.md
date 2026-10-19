@@ -8,6 +8,8 @@ also join our discord server
 
 [![Discord](https://invidget.switchblade.xyz/MPzuWvg2BT?theme=dark)](https://discord.gg/MPzuWvg2BT)
 
+[![Get it on Orion Store](https://raw.githubusercontent.com/RookieEnough/Orion-Store/refs/heads/main/assets/orion-badge.png)](https://rookieenough.github.io/Orion-Data/redirect.html?id=rigby-launcher&icon=https%3A%2F%2Fcdn.discordapp.com%2Fattachments%2F1401987157517930637%2F1555864409253879858%2Fcdfa751e-5ca7-4717-8c25-107442b991a6.png%3Fbackend%3Db2%26ex%3D6ad72b25%26is%3D6ad5d9a5%26hm%3D357d97b470e5a1b32791c4913a3849dc46dd324496ab2b6115335c3ed2f23ef0%26)
+
 ![Rigby Launcher](1.png)
 
 ## Features
