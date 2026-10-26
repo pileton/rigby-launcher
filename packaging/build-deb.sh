@@ -2,7 +2,7 @@
 set -e
 
 NAME="rigby-launcher"
-VERSION="1.0.0"
+VERSION="0.7"
 ROOT="$(dirname "$(dirname "$(readlink -f "$0")")")"
 BUILD="$ROOT/packaging/deb-build"
 mkdir -p "$BUILD/DEBIAN"
@@ -18,7 +18,7 @@ Version: $VERSION
 Section: games
 Priority: optional
 Architecture: all
-Depends: python3 (>= 3.8), python3-gi, python3-gi-cairo, gir1.2-webkit2-4.1, wine
+Depends: python3 (>= 3.8), python3-gi, python3-gi-cairo, gir1.2-webkit2-4.1, python3-requests, wine
 Maintainer: pileton
 Description: Rigby Launcher
  Rigby Launcher - a launcher for Among Us with game version

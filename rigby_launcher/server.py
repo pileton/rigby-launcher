@@ -71,6 +71,12 @@ def _http_get(url, **kwargs):
     return _http_session().get(url, **kwargs)
 
 def _download(url, dest_path):
+    """Download url -> dest_path robustly.
+
+    Tries the retrying requests session first. If the connection times out or is
+    refused (python-requests intermittently cannot reach github.com while curl
+    can), fall back to curl with its own retries. Returns (ok, message).
+    """
     try:
         resp = _http_get(url, stream=True, timeout=(15, 180))
         resp.raise_for_status()
@@ -147,6 +153,8 @@ for _m in MODS:
 
 
 def _proxy_image(url):
+    """Register a remote image for the /api/icon disk-cache route and return
+    its same-origin URL, so avatars load reliably and are cached like mod icons."""
     if not url or url.startswith("/api/"):
         return url or ""
     _h = _icon_hash(url)
@@ -155,6 +163,12 @@ def _proxy_image(url):
 
 
 def _itch_profile(token):
+    """Return the itch.io user behind an OAuth token ({} on failure).
+
+    The legacy /api/1/key/me endpoint no longer returns profile fields, so use
+    the current https://api.itch.io/profile endpoint (Bearer) — it includes
+    cover_url (the account's profile picture) when one is set. The legacy
+    endpoint stays as a fallback for tokens it still serves."""
     for url, headers in (
         ("https://api.itch.io/profile", {"Authorization": "Bearer " + token}),
         ("https://itch.io/api/1/key/me", {"Authorization": token}),
@@ -172,6 +186,7 @@ def _itch_profile(token):
 
 
 def _prefetch_icons():
+    """Warm the icon cache in a background thread so the first Mods open is instant."""
     try:
         os.makedirs(ICON_CACHE_DIR, exist_ok=True)
         for h, src in list(ICON_URLS.items()):
@@ -190,6 +205,10 @@ BROWSE_STATE = {"busy": False, "done": False, "dir": "", "unavailable": False}
 
 
 def pick_directory():
+    """Open the first available native folder picker.
+
+    Returns (ran, path): ran=False when no picker could be started at all;
+    ran=True with an empty path means the user cancelled the dialog."""
     pickers = [
         ["zenity", "--file-selection", "--directory", "--title=Select Directory"],
         ["kdialog", "--getexistingdirectory", "--title=Select Directory"],
@@ -209,6 +228,7 @@ def pick_directory():
 
 
 def _browse_worker():
+    """Run the picker off the request thread and persist the choice."""
     try:
         ran, path = pick_directory()
         if path:
@@ -265,6 +285,7 @@ selected_version = settings.get("selected_version") or selected_version
 
 
 def _au_game_procs():
+    """Return [(pid, cpu_pct, rss_bytes, args)] for running Among Us processes."""
     if os.name == "nt":
         return []
     try:
