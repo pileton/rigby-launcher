@@ -60,12 +60,12 @@ makepkg -si
 > On a Wayland-only session `makepkg -si` can fail because WebKit2GTK needs an X
 > display at build time. Install `xwayland` (or use an X11 session) and make sure
 > `base-devel`, `webkit2gtk-4.1` and `gtk3` are installed first. A pre-built
-> `rigby-launcher-0.7-1-any.pkg.tar.zst` is also published if building fails.
+> `rigby-launcher-0.8-1-any.pkg.tar.zst` is also published if building fails.
 
 #### Debian/Ubuntu (.deb)
 
 ```bash
-sudo dpkg -i rigby-launcher_0.7_all.deb
+sudo dpkg -i rigby-launcher_0.8_all.deb
 sudo apt install -f
 ```
 

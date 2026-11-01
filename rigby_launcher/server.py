@@ -20,7 +20,7 @@ ITCH_CLIENT_ID = "1ba9b4bfa1ac7759e8420eed4ec863ba"
 OAUTH_PORT = 7890
 
 LAUNCHER_REPO = "pileton/rigby-launcher"
-LAUNCHER_VERSION = "0.7"
+LAUNCHER_VERSION = "0.8"
 
 RELEASES = {
     "19I": "https://github.com/jogamerforgames2021/AmongUsLauncherNew/releases/download/19I/app.zip",
@@ -74,7 +74,7 @@ selected_version = "18I"
 latest_release_tag = None
 
 LAUNCHER_REPO = "pileton/rigby-launcher"
-LAUNCHER_VERSION = "0.7"
+LAUNCHER_VERSION = "0.8"
 BEPINEX_REPO = "BepInEx/BepInEx"
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.6 (KHTML, like Gecko) Chrome/120.0 Safari/537.6"
 

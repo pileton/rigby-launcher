@@ -1,6 +1,6 @@
 # Maintainer: pileton
 pkgname=rigby-launcher
-pkgver=0.7
+pkgver=0.8
 pkgrel=1
 pkgdesc="Rigby Launcher — a native launcher for Among Us with game version management, auto-download, and itch.io login fixer"
 arch=('any')
@@ -9,7 +9,7 @@ license=('custom: Rigby Launcher License')
 depends=('python>=3.8' 'python-gobject' 'webkit2gtk-4.1' 'python-requests' 'wine')
 makedepends=('python-setuptools')
 source=("$pkgname-$pkgver.tar.gz")
-sha256sums=('edc80f7fc1c0c265ee2cd21293b09e3f4b7108548938cfa1a52b4970c2ed071c')
+sha256sums=('036bfc148328423cd7451c63d94a21bd5f798da667da1e545e0ea471cf6635cc')
 
 package() {
   cd "$srcdir/$pkgname-$pkgver"

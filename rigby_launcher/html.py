@@ -790,6 +790,14 @@ html { scrollbar-width: none; }
     <div id="cl-title">Changelog</div>
     <div id="cl-entries">
     <div class="cl-entry">
+      <div class="cl-ver">v0.8</div>
+      <div class="cl-date">November 2026</div>
+      <div class="cl-item">New versions, mods, and changelogs now load from the repo catalog</div>
+      <div class="cl-item">Launches are verified against the real Among Us process</div>
+      <div class="cl-item">Failed launches show an error code, likely causes, and a log</div>
+      <div class="cl-item">Smaller popups with clearer error text</div>
+    </div>
+    <div class="cl-entry">
       <div class="cl-ver">v0.7</div>
       <div class="cl-date">October 2026</div>
       <div class="cl-item">Fixed itch.io profile pictures not loading</div>

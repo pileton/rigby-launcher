@@ -50,6 +50,16 @@
   ],
   "changelog": [
     {
+      "version": "v0.8",
+      "date": "November 2026",
+      "items": [
+        "New versions, mods, and changelogs now load from the repo catalog",
+        "Launches are verified against the real Among Us process",
+        "Failed launches show an error code, likely causes, and a log",
+        "Smaller popups with clearer error text"
+      ]
+    },
+    {
       "version": "v0.7",
       "date": "October 2026",
       "items": [

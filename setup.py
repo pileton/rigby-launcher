@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="rigby-launcher",
-    version="0.7",
+    version="0.8",
     description="Rigby Launcher - Among Us game launcher with integrated Itch Login Fixer",
     packages=find_packages(),
     python_requires=">=3.8",

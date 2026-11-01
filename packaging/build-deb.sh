@@ -2,7 +2,7 @@
 set -e
 
 NAME="rigby-launcher"
-VERSION="0.7"
+VERSION="0.8"
 ROOT="$(dirname "$(dirname "$(readlink -f "$0")")")"
 BUILD="$ROOT/packaging/deb-build"
 mkdir -p "$BUILD/DEBIAN"
