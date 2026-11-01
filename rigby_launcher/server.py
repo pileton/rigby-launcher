@@ -37,6 +37,39 @@ RELEASES = {
     "16.0.2I": "https://github.com/jogamerforgames2021/AmongUsLauncherNew/releases/download/16.0.2I/app.zip",
 }
 
+BUILTIN_RELEASES = dict(RELEASES)
+
+# Remote catalog: edit catalog.json in the repo to add versions/mods/changelog.
+CATALOG_URL = os.environ.get(
+    "RIGBY_CATALOG_URL",
+    "https://raw.githubusercontent.com/pileton/rigby-launcher/main/catalog.json",
+)
+CATALOG_CACHE_FILE = os.path.join(DATA_DIR, "catalog.cache.json")
+CATALOG_TTL = 600
+CHANGELOG = []
+CATALOG_STATE = {
+    "loaded": False,
+    "source": "builtin",
+    "error": "",
+    "loaded_at": 0.0,
+    "retry_at": 0.0,
+    "refreshing": False,
+}
+_catalog_lock = threading.Lock()
+
+
+def _catalog_version_key(version):
+    key = []
+    for part in str(version).lstrip("vV").split("."):
+        num = ""
+        for ch in part:
+            if ch.isdigit():
+                num += ch
+            else:
+                break
+        key.append(int(num) if num else 0)
+    return tuple(key)
+
 selected_version = "18I"
 latest_release_tag = None
 
@@ -151,6 +184,8 @@ for _m in MODS:
     ICON_URLS[_h] = _m["image"]
     _m["image"] = "/api/icon/" + _h
 
+BUILTIN_MODS = [dict(m) for m in MODS]
+
 
 def _proxy_image(url):
     """Register a remote image for the /api/icon disk-cache route and return
@@ -199,6 +234,205 @@ def _prefetch_icons():
                 pass
     except Exception:
         pass
+
+
+MOD_PLACEHOLDER = "data:image/svg+xml;charset=utf-8," + urllib.parse.quote(
+    "<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'>"
+    "<rect width='40' height='40' rx='8' fill='#202020'/>"
+    "<path d='M20 11v18M11 20h18' stroke='#888' stroke-width='2'/></svg>",
+    safe="",
+)
+
+
+def _is_http_url(value):
+    return isinstance(value, str) and value.startswith(("http://", "https://"))
+
+
+def _normalise_mod(raw):
+    if not isinstance(raw, dict):
+        return None
+    mod_id = str(raw.get("id", "")).strip()
+    name = str(raw.get("name", "")).strip()
+    url = str(raw.get("url", "")).strip()
+    if not mod_id or not name or not _is_http_url(url):
+        return None
+    version = raw.get("version", [])
+    if isinstance(version, str):
+        version = [version] if version else []
+    if not isinstance(version, list):
+        return None
+    version = [str(v).strip() for v in version if str(v).strip()]
+    categories = raw.get("categories", [])
+    if not isinstance(categories, list):
+        categories = []
+    image = str(raw.get("image", "")).strip()
+    mod = {
+        "id": mod_id,
+        "name": name,
+        "version": version,
+        "categories": [str(c) for c in categories if str(c).strip()],
+        "description": str(raw.get("description", "")).strip(),
+        "image": image if _is_http_url(image) else MOD_PLACEHOLDER,
+        "url": url,
+    }
+    spec = raw.get("bepinex")
+    if isinstance(spec, dict):
+        clean = {"version": str(spec.get("version", "")).strip()}
+        for key in ("win_x86", "win_x64"):
+            if _is_http_url(spec.get(key)):
+                clean[key] = spec[key]
+        if clean["version"] and any(k in clean for k in ("win_x86", "win_x64")):
+            mod["bepinex"] = clean
+    return mod
+
+
+def _register_mod_icons():
+    for mod in MODS:
+        image = mod.get("image", "")
+        if image.startswith(("/api/icon/", "data:")):
+            continue
+        if _is_http_url(image):
+            h = _icon_hash(image)
+            ICON_URLS[h] = image
+            mod["image"] = "/api/icon/" + h
+        else:
+            mod["image"] = MOD_PLACEHOLDER
+
+
+def _apply_catalog(data):
+    global selected_version
+    if not isinstance(data, dict):
+        raise ValueError("catalog root must be an object")
+
+    versions = data.get("versions", {})
+    merged = dict(BUILTIN_RELEASES)
+    if isinstance(versions, dict):
+        for version, url in versions.items():
+            if _is_http_url(url):
+                merged[str(version)] = url
+    elif isinstance(versions, list):
+        for row in versions:
+            if isinstance(row, dict) and row.get("id") and _is_http_url(row.get("url")):
+                merged[str(row["id"])] = row["url"]
+    RELEASES.clear()
+    for version in sorted(merged, key=_catalog_version_key, reverse=True):
+        RELEASES[version] = merged[version]
+    if selected_version not in RELEASES:
+        selected_version = next(iter(RELEASES), "18I")
+
+    # Rebuild from built-ins so removed catalog entries disappear.
+    MODS[:] = [dict(m) for m in BUILTIN_MODS]
+    mods = data.get("mods", [])
+    if isinstance(mods, list):
+        index = {m["id"]: i for i, m in enumerate(MODS)}
+        for raw in mods:
+            mod = _normalise_mod(raw)
+            if not mod:
+                log("catalog: ignored invalid mod entry")
+                continue
+            if mod["id"] in index:
+                MODS[index[mod["id"]]] = mod
+            else:
+                index[mod["id"]] = len(MODS)
+                MODS.append(mod)
+    _register_mod_icons()
+
+    entries = data.get("changelog", [])
+    clean_entries = []
+    if isinstance(entries, list):
+        for raw in entries:
+            if not isinstance(raw, dict):
+                continue
+            items = raw.get("items", [])
+            if isinstance(items, str):
+                items = [items]
+            if not isinstance(items, list):
+                continue
+            clean_entries.append({
+                "version": str(raw.get("version", "")).strip(),
+                "date": str(raw.get("date", "")).strip(),
+                "items": [str(i) for i in items if str(i).strip()],
+            })
+    clean_entries.sort(key=lambda e: _catalog_version_key(e["version"]), reverse=True)
+    CHANGELOG[:] = clean_entries
+
+
+def _read_catalog_source():
+    source = CATALOG_URL
+    if source.startswith("file://"):
+        path = urllib.parse.unquote(source[7:])
+        with open(path, encoding="utf-8") as f:
+            return json.load(f), "file"
+    if "://" not in source:
+        with open(source, encoding="utf-8") as f:
+            return json.load(f), "file"
+    r = _http_get(source, timeout=(5, 20))
+    r.raise_for_status()
+    return r.json(), "remote"
+
+
+def _write_catalog_cache(data):
+    try:
+        os.makedirs(DATA_DIR, exist_ok=True)
+        tmp = CATALOG_CACHE_FILE + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+        os.replace(tmp, CATALOG_CACHE_FILE)
+    except Exception:
+        pass
+
+
+def _refresh_catalog():
+    error = ""
+    source = "builtin"
+    loaded = False
+    try:
+        data, source = _read_catalog_source()
+        _apply_catalog(data)
+        _write_catalog_cache(data)
+        loaded = True
+    except Exception as e:
+        error = str(e)[:300]
+        try:
+            with open(CATALOG_CACHE_FILE, encoding="utf-8") as f:
+                _apply_catalog(json.load(f))
+            source = "cache"
+            loaded = True
+        except Exception as cache_error:
+            error = (error + "; cache: " + str(cache_error))[:300]
+    finally:
+        with _catalog_lock:
+            CATALOG_STATE.update({
+                "loaded": loaded,
+                "source": source,
+                "error": error,
+                "loaded_at": time.time(),
+                "retry_at": 0.0 if loaded else time.time() + 60,
+                "refreshing": False,
+            })
+        if loaded:
+            log("catalog: loaded %s (%d versions, %d mods, %d changelog entries)"
+                % (source, len(RELEASES), len(MODS), len(CHANGELOG)))
+        else:
+            log("catalog: refresh failed: " + error)
+
+
+def ensure_catalog():
+    now = time.time()
+    with _catalog_lock:
+        if CATALOG_STATE["refreshing"]:
+            return
+        if CATALOG_STATE["loaded"] and now - CATALOG_STATE["loaded_at"] < CATALOG_TTL:
+            return
+        if now < CATALOG_STATE["retry_at"]:
+            return
+        CATALOG_STATE["refreshing"] = True
+    threading.Thread(target=_refresh_catalog, daemon=True).start()
+
+
+def catalog_status():
+    with _catalog_lock:
+        return dict(CATALOG_STATE)
 
 
 BROWSE_STATE = {"busy": False, "done": False, "dir": "", "unavailable": False}
@@ -284,8 +518,37 @@ settings = load_settings()
 selected_version = settings.get("selected_version") or selected_version
 
 
-def _au_game_procs():
-    """Return [(pid, cpu_pct, rss_bytes, args)] for running Among Us processes."""
+def _proc_text(pid, name, limit=2_000_000):
+    try:
+        with open("/proc/%d/%s" % (pid, name), "rb") as f:
+            return f.read(limit).decode("utf-8", "replace").lower()
+    except Exception:
+        return ""
+
+
+def _looks_like_game_process(pid, args):
+    """True when the process names itself as the game or maps game files."""
+    low = args.lower()
+    if not ("among us" in low or "amongus.exe" in low or "amogus" in low):
+        return False
+    comm = _proc_text(pid, "comm", 256)
+    if "among us" in comm or "amongus" in comm or "amogus" in comm:
+        return True
+    # Stream maps instead of truncating: Unity/IL2CPP maps can exceed 2 MB.
+    markers = (b"gameassembly.dll", b"unityplayer.dll", b"among us_data", b"among\\040us_data")
+    try:
+        with open("/proc/%d/maps" % pid, "rb") as f:
+            for line in f:
+                low_line = line.lower()
+                if any(marker in low_line for marker in markers):
+                    return True
+    except Exception:
+        pass
+    return False
+
+
+def _au_game_procs(strict=False):
+    """Return [(pid, cpu_pct, rss_bytes, args)] for Among Us processes."""
     if os.name == "nt":
         return []
     try:
@@ -307,12 +570,196 @@ def _au_game_procs():
             continue
         if "among us" in low or "amongus.exe" in low or "amogus" in low:
             try:
-                res.append((int(pid), float(pcpu), int(rss) * 1024, args))
+                pid_int = int(pid)
+                if strict and not _looks_like_game_process(pid_int, args):
+                    continue
+                res.append((pid_int, float(pcpu), int(rss) * 1024, args))
             except ValueError:
                 pass
     return res
 
 _last_launch_ts = 0.0
+
+# Launch verification: /api/launch starts this worker, the UI polls its status.
+LAUNCH_VERIFY_TIMEOUT = float(os.environ.get("RIGBY_LAUNCH_TIMEOUT", "45"))
+LAUNCH_LOG_DIR = os.path.join(DATA_DIR, "logs")
+LAUNCH_STATE = {
+    "id": "",
+    "status": "idle",
+    "pid": None,
+    "pids": [],
+    "started_at": 0.0,
+    "message": "",
+    "code": "",
+    "likely_causes": [],
+    "details": "",
+    "log_path": "",
+}
+_launch_lock = threading.Lock()
+
+
+def _mem_available_mb():
+    try:
+        with open("/proc/meminfo") as f:
+            for line in f:
+                if line.startswith("MemAvailable:"):
+                    return int(line.split()[1]) // 1024
+    except Exception:
+        pass
+    return None
+
+
+def _read_log_tail(path, limit=4000):
+    try:
+        size = os.path.getsize(path)
+        with open(path, "rb") as f:
+            f.seek(max(0, size - limit))
+            return f.read().decode("utf-8", "replace")
+    except Exception:
+        return ""
+
+
+def _classify_launch_failure(exit_code, output, timed_out=False):
+    text = (output or "").lower()
+    low_mem = _mem_available_mb()
+    memory_hint = ("Low memory (%d MB free)" % low_mem) if low_mem is not None and low_mem < 700 else ""
+
+    if "out of memory" in text or "bad_alloc" in text or "cannot allocate memory" in text:
+        return ("R-1005", "The game ran out of memory.",
+                ["System memory exhausted", "Killed by the OOM killer", "Too many mods or apps open"])
+    if exit_code in (-9, 137) or "killed" in text:
+        causes = ["OOM killer", "Another process killed it", "Crash during startup"]
+        if memory_hint:
+            causes.insert(0, memory_hint)
+        return "R-1005", "The game was killed before it finished launching.", causes
+    if "cannot find" in text or "no such file" in text or "not found" in text:
+        return ("R-1002", "A required game file is missing.",
+                ["Wrong or incomplete game folder", "Among Us.exe was moved", "Wine cannot see the folder"])
+    if "display" in text or "x connection" in text or "xauth" in text or "wayland" in text:
+        return ("R-1006", "The game could not connect to the display.",
+                ["DISPLAY/XAUTHORITY is wrong", "Wayland/Xwayland unavailable", "Wrong desktop session"])
+    if "vulkan" in text or "dxvk" in text or "d3d" in text or "gpu" in text or "driver" in text:
+        return ("R-1007", "The graphics driver or DXVK failed.",
+                ["Missing Vulkan/D3D feature", "DXVK misconfigured", "Wrong Wine/DXVK version"])
+    if "prefix" in text or "wineboot" in text or "wineserver" in text:
+        return ("R-1008", "The Wine prefix could not start.",
+                ["Corrupted prefix", "Prefix is locked", "Prefix is not writable"])
+    if timed_out:
+        causes = ["Still loading (slow disk/CPU)", "Wine stuck before the window",
+                  "Silent crash", "Graphics/prefix issue"]
+        if memory_hint:
+            causes.insert(0, memory_hint)
+        return "R-1004", "Among Us did not appear before the timeout.", causes
+    if exit_code is not None:
+        causes = ["Wine exit code %s" % exit_code, "Incomplete game files", "Wine/graphics/mod issue"]
+        if memory_hint:
+            causes.insert(0, memory_hint)
+        return ("R-1003", "The game exited before launch (code %s)." % exit_code, causes)
+    return ("R-1999", "The game could not be launched.",
+            ["Out of memory", "Missing/corrupted game file", "Wine/graphics issue", "Closed immediately"])
+
+
+def _launch_error(code, message, causes=None):
+    log("launch: rejected %s %s" % (code, message))
+    return {"ok": False, "status": "failed", "code": code, "message": message,
+            "likely_causes": causes or []}
+
+
+def _set_launch_state(**kwargs):
+    with _launch_lock:
+        LAUNCH_STATE.update(kwargs)
+
+
+def launch_status(launch_id=""):
+    with _launch_lock:
+        state = dict(LAUNCH_STATE)
+    if launch_id and state["id"] != launch_id:
+        return {"ok": False, "status": "unknown", "message": "Launch id not found."}
+    state["ok"] = state["status"] != "failed"
+    return state
+
+
+def _watch_game_exit(launch_id):
+    while True:
+        time.sleep(5)
+        if _au_game_procs(strict=True):
+            continue
+        with _launch_lock:
+            if LAUNCH_STATE["id"] == launch_id and LAUNCH_STATE["status"] == "running":
+                LAUNCH_STATE.update({"status": "idle", "pids": [], "message": ""})
+        log("launch %s: game exited" % launch_id)
+        return
+
+
+def _launch_worker(launch_id, game_dir, exe_path):
+    log_path = os.path.join(LAUNCH_LOG_DIR, "launch-%s.log" % launch_id)
+    proc = None
+    lf = None
+    try:
+        os.makedirs(LAUNCH_LOG_DIR, exist_ok=True)
+        lf = open(log_path, "wb")
+        wine_bin = settings.get("wine_binary", "") or "wine"
+        wine_prefix = settings.get("wine_prefix", "") or os.path.join(HOME, ".wine-au")
+        if sys.platform == "win32":
+            log("launch %s: starting %s" % (launch_id, exe_path))
+            proc = subprocess.Popen([exe_path], cwd=game_dir, stdin=subprocess.DEVNULL,
+                                    stdout=lf, stderr=subprocess.STDOUT)
+        else:
+            env = {"WINEPREFIX": wine_prefix, "HOME": HOME,
+                   "USER": os.environ.get("USER", ""),
+                   "DISPLAY": os.environ.get("DISPLAY", ":0"),
+                   "XAUTHORITY": os.environ.get("XAUTHORITY", os.path.join(HOME, ".Xauthority")),
+                   "WAYLAND_DISPLAY": os.environ.get("WAYLAND_DISPLAY", ""),
+                   "PATH": "/usr/local/bin:/usr/bin:/bin",
+                   "DXVK_ASYNC": "1"}
+            log("launch %s: wine=%s prefix=%s exe=%s" % (launch_id, wine_bin, wine_prefix, exe_path))
+            proc = subprocess.Popen([wine_bin, exe_path], cwd=game_dir, env=env,
+                                    stdin=subprocess.DEVNULL, stdout=lf, stderr=subprocess.STDOUT)
+        _set_launch_state(pid=proc.pid, pids=[proc.pid], status="starting",
+                          message="Waiting for Among Us to start...", log_path=log_path)
+        log("launch %s: wine pid=%d log=%s" % (launch_id, proc.pid, log_path))
+
+        deadline = time.time() + LAUNCH_VERIFY_TIMEOUT
+        while time.time() < deadline:
+            procs = _au_game_procs(strict=True)
+            if procs:
+                pids = [p[0] for p in procs]
+                _set_launch_state(status="running", pids=pids, message="Game launched.",
+                                  code="", likely_causes=[], details="")
+                log("launch %s: verified Among Us pids=%s" % (launch_id, pids))
+                threading.Thread(target=_watch_game_exit, args=(launch_id,), daemon=True).start()
+                return
+            if proc.poll() is not None:
+                break
+            time.sleep(0.5)
+
+        rc = proc.poll()
+        output = _read_log_tail(log_path)
+        if rc is None:
+            log("launch %s: timeout; wine candidates=%s" % (launch_id, _au_game_procs()))
+        code, message, causes = _classify_launch_failure(rc, output, timed_out=(rc is None))
+        _set_launch_state(status="failed", pids=[], code=code, message=message,
+                          likely_causes=causes, details=output[-2000:], log_path=log_path)
+        log("launch %s: failed code=%s exit=%s log=%s" % (launch_id, code, rc, log_path))
+    except FileNotFoundError:
+        message = "Wine was not found."
+        _set_launch_state(status="failed", pids=[], code="R-1001", message=message,
+                          likely_causes=["Wine is not installed", "Wrong Wine binary path"],
+                          log_path=log_path)
+        log("launch %s: R-1001 %s (configured: %s)" % (launch_id, message, settings.get("wine_binary", "") or "wine"))
+    except Exception as e:
+        _set_launch_state(status="failed", pids=[], code="R-1999",
+                          message="The launcher could not start the game process.",
+                          likely_causes=["Wine or game executable failed", "Permissions or path problem"],
+                          log_path=log_path)
+        log("launch %s: R-1999 %s" % (launch_id, e))
+    finally:
+        if lf:
+            try:
+                lf.close()
+            except Exception:
+                pass
+
 
 _beta_mon_started = False
 def start_beta_monitor():
@@ -477,6 +924,7 @@ class APIHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
+        ensure_catalog()
 
         from rigby_launcher.html import HTML_INDEX
 
@@ -502,10 +950,24 @@ class APIHandler(BaseHTTPRequestHandler):
                 "installed_versions": [v for v in RELEASES if _is_version_installed(v)],
                 "latest_release": latest_release_tag,
                 "versions": list(RELEASES.keys()),
+                "catalog": {"loaded": catalog_status().get("loaded", False),
+                            "source": catalog_status().get("source", "builtin")},
             })
 
         elif path == "/api/versions":
             self._send_json({"versions": list(RELEASES.keys()), "selected": selected_version})
+
+        elif path == "/api/changelog":
+            self._send_json({"entries": CHANGELOG, "source": catalog_status().get("source", "builtin")})
+
+        elif path == "/api/catalog/status":
+            state = catalog_status()
+            state.update({"versions": len(RELEASES), "mods": len(MODS), "changelog": len(CHANGELOG)})
+            self._send_json(state)
+
+        elif path == "/api/launch/status":
+            query = urllib.parse.parse_qs(parsed.query)
+            self._send_json(launch_status(query.get("id", [""])[0]))
 
         elif path == "/api/fixer/status":
             self._check_existing_fixer_token()
@@ -1212,43 +1674,35 @@ class APIHandler(BaseHTTPRequestHandler):
     def _launch_game(self):
         game_dir = detect_game_dir()
         if not game_dir:
-            return {"ok": False, "message": "Game not installed. Download it first."}
+            return _launch_error("R-1002", "Game not installed. Download it first.",
+                                 ["No game directory was found.", "The selected version is not installed."])
         exe_path = os.path.join(game_dir, "Among Us.exe")
         if not os.path.exists(exe_path):
-            return {"ok": False, "message": "Among Us.exe not found in game directory."}
-
-        if _au_game_procs():
-            return {"ok": False, "message": "Game is already running. Close it first before launching again."}
+            return _launch_error("R-1002", "Among Us.exe not found in the game directory.",
+                                 ["The game folder is incomplete.", "The game was moved or deleted."])
+        if _au_game_procs(strict=True):
+            return _launch_error("R-1010", "Game is already running.",
+                                 ["Close Among Us first"])
         global _last_launch_ts
         now = time.time()
         if now - _last_launch_ts < 5.0:
-            return {"ok": False, "message": "Game is launching, wait a moment before launching again."}
+            return _launch_error("R-1011", "The game is already launching. Wait a moment.",
+                                 ["Previous launch is still starting"])
+        with _launch_lock:
+            if LAUNCH_STATE["status"] == "running":
+                LAUNCH_STATE["status"] = "idle"
+            if LAUNCH_STATE["status"] == "starting":
+                return _launch_error("R-1011", "The game is already launching. Wait a moment.",
+                                     ["Previous launch is still starting"])
+            launch_id = str(int(time.time() * 1000))
+            LAUNCH_STATE.update({
+                "id": launch_id, "status": "starting", "pid": None, "pids": [],
+                "started_at": now, "message": "Launching...", "code": "",
+                "likely_causes": [], "details": "", "log_path": "",
+            })
         _last_launch_ts = now
-
-        if sys.platform == "win32":
-            try:
-                subprocess.Popen([exe_path], cwd=game_dir)
-                return {"ok": True, "message": "Game launched!"}
-            except Exception as e:
-                return {"ok": False, "message": str(e)}
-
-        wine_bin = settings.get("wine_binary", "") or "wine"
-        wine_prefix = settings.get("wine_prefix", "") or os.path.join(HOME, ".wine-au")
-        env = {"WINEPREFIX": wine_prefix, "HOME": HOME,
-               "USER": os.environ.get("USER", ""),
-               "DISPLAY": os.environ.get("DISPLAY", ":0"),
-               "XAUTHORITY": os.environ.get("XAUTHORITY", os.path.join(HOME, ".Xauthority")),
-               "WAYLAND_DISPLAY": os.environ.get("WAYLAND_DISPLAY", ""),
-               "PATH": "/usr/local/bin:/usr/bin:/bin",
-               "DXVK_ASYNC": "1"}
-
-        try:
-            subprocess.Popen([wine_bin, exe_path], cwd=game_dir, env=env)
-            return {"ok": True, "message": "Game launched!"}
-        except FileNotFoundError:
-            return {"ok": False, "message": f"Wine not found at '{wine_bin}'. Install wine."}
-        except Exception as e:
-            return {"ok": False, "message": str(e)}
+        threading.Thread(target=_launch_worker, args=(launch_id, game_dir, exe_path), daemon=True).start()
+        return {"ok": True, "status": "starting", "launch_id": launch_id, "message": "Launching..."}
 
 
 LOG_FILE = os.path.join(DATA_DIR, "server.log")

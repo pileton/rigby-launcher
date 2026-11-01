@@ -532,7 +532,7 @@ html { scrollbar-width: none; }
 #dlg-overlay.open { opacity: 1; visibility: visible; pointer-events: auto; transition: opacity 0.2s ease, visibility 0s; }
 .dlg {
   position: relative; container-type: inline-size;
-  width: min(480px, calc(100vw - 32px)); aspect-ratio: 1060 / 520;
+  width: min(400px, calc(100vw - 32px)); aspect-ratio: 1060 / 520;
   overflow: hidden; border-radius: 14.4% / 29.2%;
   background: linear-gradient(var(--card), var(--card)), var(--bg);
   box-shadow: 0 18px 46px rgba(0, 0, 0, 0.46); border: 1px solid var(--card-border);
@@ -549,7 +549,11 @@ html { scrollbar-width: none; }
 .dlg-desc {
   position: absolute; top: 37.2%; left: 6.3%; right: 6.3%; margin: 0;
   color: var(--placeholder); font-size: 4.72cqw; font-weight: 400; line-height: 1.22; letter-spacing: -0.012em;
+  white-space: pre-line;
 }
+.dlg.tall { aspect-ratio: 1060 / 640; }
+.dlg.tall .dlg-desc { top: 30%; bottom: 34%; overflow-y: auto; scrollbar-width: none; }
+.dlg.tall .dlg-actions { height: 24%; bottom: 8%; }
 .dlg-actions {
   position: absolute; right: 4.25%; bottom: 9.42%; left: 4.25%;
   display: grid; grid-template-columns: 1fr 1fr; gap: 2.9%; height: 27%;
@@ -572,7 +576,7 @@ html { scrollbar-width: none; }
 .dlg.info .dlg-btn-yes { border-color: #0091FF; background: #0091FF; }
 .dlg.info .dlg-btn-yes:hover { background: #2ba0ff; border-color: #2ba0ff; }
 @media (max-width: 700px) {
-  .dlg { width: min(480px, calc(100vw - 24px)); min-width: 0; border-radius: 10.8% / 18.5%; }
+  .dlg { width: min(400px, calc(100vw - 24px)); min-width: 0; border-radius: 10.8% / 18.5%; }
   .dlg-heading { top: 14%; left: 6.5%; gap: 2.8%; }
   .dlg-title { font-size: 5.2cqw; }
   .dlg-desc { top: 38%; left: 6.5%; right: 6.5%; font-size: 4.35cqw; letter-spacing: -0.025em; }
@@ -784,6 +788,7 @@ html { scrollbar-width: none; }
       <svg class="lucide" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
     <div id="cl-title">Changelog</div>
+    <div id="cl-entries">
     <div class="cl-entry">
       <div class="cl-ver">v0.7</div>
       <div class="cl-date">October 2026</div>
@@ -844,6 +849,7 @@ html { scrollbar-width: none; }
       <div class="cl-ver">v0.1</div>
       <div class="cl-date">Initial release</div>
       <div class="cl-item">First release of the launcher</div>
+    </div>
     </div>
   </div>
 </div>
@@ -1145,11 +1151,13 @@ function showDialog(opts) {
     $('dlg-actions').classList.add('single');
   }
   $('dlg').classList.toggle('info', opts.variant === 'info');
+  const tall = opts.variant === 'danger';
+  $('dlg').classList.toggle('tall', tall);
   const desc = $('dlg-desc');
   desc.style.fontSize = '';
   const actionsTop = $('dlg-actions').getBoundingClientRect().top;
   let fs = parseFloat(getComputedStyle(desc).fontSize) || 40;
-  for (let i = 0; i < 8 && fs > 14 && desc.getBoundingClientRect().bottom > actionsTop - 6; i++) {
+  for (let i = 0; i < 10 && fs * 0.88 >= 13 && (desc.scrollHeight > desc.clientHeight + 1 || (!tall && desc.getBoundingClientRect().bottom > actionsTop - 6)); i++) {
     fs *= 0.88;
     desc.style.fontSize = fs + 'px';
   }
@@ -1280,6 +1288,40 @@ function showFixerOverlay(title, sub, done) {
 
 function hideFixerOverlay() { $('fixer-overlay').classList.remove('open'); }
 
+function escHtml(value) {
+  return String(value).replace(/[&<>"']/g, function(ch) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+  });
+}
+
+async function loadChangelog() {
+  try {
+    const r = await fetch('/api/changelog');
+    const d = await r.json();
+    const entries = d.entries || [];
+    if (!entries.length) return;
+    $('cl-entries').innerHTML = entries.map(function(e) {
+      const items = (e.items || []).map(function(i) { return '<div class="cl-item">' + escHtml(i) + '</div>'; }).join('');
+      const date = e.date ? '<div class="cl-date">' + escHtml(e.date) + '</div>' : '';
+      return '<div class="cl-entry"><div class="cl-ver">' + escHtml(e.version) + '</div>' + date + items + '</div>';
+    }).join('');
+  } catch(e) {}
+}
+
+async function pollCatalog(attempt) {
+  try {
+    const r = await fetch('/api/catalog/status');
+    const d = await r.json();
+    if (d.loaded) {
+      await loadVersions();
+      await loadChangelog();
+      if ($('mods-overlay').classList.contains('open')) loadMods();
+      return;
+    }
+  } catch(e) {}
+  if (attempt < 20) setTimeout(function() { pollCatalog(attempt + 1); }, 1000);
+}
+
 function toggleChangelog() { var ov = $('cl-overlay'); ov.classList.toggle('open'); var b = document.querySelector('.icon-btn[onclick="toggleChangelog()"]'); if (b) b.classList.toggle('open', ov.classList.contains('open')); }
 function openGithub() { window.location = 'https://github.com/pileton/rigby-launcher'; }
 
@@ -1389,6 +1431,29 @@ async function updateToLatest() {
   }
 }
 
+async function waitForLaunch(launchId) {
+  for (let i = 0; i < 120; i++) {
+    await new Promise(r => setTimeout(r, 500));
+    try {
+      const r = await fetch('/api/launch/status?id=' + encodeURIComponent(launchId));
+      const d = await r.json();
+      if (d.status && d.status !== 'starting') return d;
+    } catch(e) {}
+  }
+  return { ok: false, status: 'failed', code: 'R-1999',
+    message: 'The launcher stopped waiting for the game to appear.',
+    likely_causes: ['The game is taking unusually long to start.', 'Check the launcher log for details.'] };
+}
+
+function showLaunchFailure(data) {
+  const nl = String.fromCharCode(10);
+  let desc = data.message || 'The game could not be launched.';
+  if (data.code) desc += nl + 'Error code: ' + data.code;
+  const causes = (data.likely_causes || []).slice(0, 3);
+  if (causes.length) desc += nl + 'Likely: ' + causes.join('; ');
+  showDialog({ title: 'Launch Failed', desc: desc, yes: 'OK', variant: 'danger' });
+}
+
 async function handlePlay() {
   if (!state.wine_available || launching) return;
   if (!state.fixer?.logged_in && !fixerRunning) {
@@ -1403,11 +1468,18 @@ async function handlePlay() {
     const r = await fetch('/api/launch', { method: 'POST' });
     const d = await r.json();
     if (d.ok === false) {
-      showDialog({ title: 'Launch Failed', desc: d.message || 'The game could not be launched.', yes: 'OK', variant: 'danger' });
+      showLaunchFailure(d);
+    } else if (d.launch_id) {
+      const result = await waitForLaunch(d.launch_id);
+      if (result.status === 'failed' || result.ok === false) showLaunchFailure(result);
+      else checkGameStatus();
     } else {
       checkGameStatus();
     }
-  } catch(e) {}
+  } catch(e) {
+    showLaunchFailure({ message: 'Could not reach the launcher service.', code: 'R-1999',
+      likely_causes: ['The launcher server stopped or restarted.'] });
+  }
   $('dl-main').disabled = false;
   launching = false;
 }
@@ -1844,6 +1916,8 @@ function modRemove(btn) {
 }
 
 loadVersions();
+loadChangelog();
+setTimeout(function() { pollCatalog(0); }, 500);
 (async () => { await flushPendingSettings(); checkGameStatus(); })();
     loadAccts();
 </script>

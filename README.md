@@ -30,6 +30,21 @@ also join our discord server
 - Resource watchdog for low end devices
 - Smooth animations
 
+## Adding versions, mods, and changelogs
+
+Edit `catalog.json` in the repo; no code changes are needed. The launcher
+downloads it at startup and merges it with the built-in list. If the download
+fails, the last cached catalog is used, then the built-ins.
+
+- `versions`: add a version link, e.g. `"20I": "https://.../app.zip"`.
+- `mods`: add a mod object with `id`, `name`, `version` (array), `categories`,
+  `description`, `image`, `url`, and optional `bepinex` links.
+- `changelog`: add `{"version": "v0.8", "date": "Month 2026", "items": [...]}`.
+  Newest entries are shown first.
+
+`catalog.json` includes a `_help` field with the same notes. For local testing,
+set `RIGBY_CATALOG_URL=file:///path/to/catalog.json` before starting the launcher.
+
 ## Installation
 
 ### Linux

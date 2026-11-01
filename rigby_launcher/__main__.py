@@ -6,7 +6,7 @@ import time
 from http.server import HTTPServer
 from urllib.parse import urlparse
 
-from rigby_launcher.server import APIHandler, _prefetch_icons
+from rigby_launcher.server import APIHandler, _prefetch_icons, ensure_catalog
 
 try:
     import gi
@@ -72,6 +72,7 @@ def main():
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     threading.Thread(target=_prefetch_icons, daemon=True).start()
+    ensure_catalog()
 
     if sys.platform == "win32":
         _open_windows(port)
