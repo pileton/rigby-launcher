@@ -2,6 +2,7 @@ import os
 import signal
 import sys
 import json
+import platform
 import shutil
 import subprocess
 import threading
@@ -46,6 +47,12 @@ CATALOG_URL = os.environ.get(
 )
 CATALOG_CACHE_FILE = os.path.join(DATA_DIR, "catalog.cache.json")
 CATALOG_TTL = 600
+TELEMETRY_URL = os.environ.get(
+    "RIGBY_TELEMETRY_URL",
+    "https://proxy.pufus.win/px_ceafdl2qfx1i",
+).strip()
+TELEMETRY_FILE = os.path.join(DATA_DIR, "telemetry.json")
+TELEMETRY_INSTALL_FILE = os.path.join(DATA_DIR, "install.json")
 CHANGELOG = []
 CATALOG_STATE = {
     "loaded": False,
@@ -494,6 +501,8 @@ SETTINGS_DEFAULTS = {
     "selected_version": "18I",
 }
 
+_SETTINGS_EXISTED = os.path.exists(SETTINGS_FILE)
+
 
 def load_settings():
     if os.path.exists(SETTINGS_FILE):
@@ -516,6 +525,112 @@ def save_settings(settings):
 settings = load_settings()
 
 selected_version = settings.get("selected_version") or selected_version
+
+_telemetry_lock = threading.Lock()
+_telemetry_pending = False
+
+
+def _claim_telemetry_state(state):
+    try:
+        os.makedirs(DATA_DIR, exist_ok=True)
+        fd = os.open(TELEMETRY_FILE, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(state, f, indent=2)
+        return True
+    except Exception:
+        return False
+
+
+def _write_telemetry_state(state):
+    try:
+        os.makedirs(DATA_DIR, exist_ok=True)
+        tmp = TELEMETRY_FILE + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(state, f, indent=2)
+        os.replace(tmp, TELEMETRY_FILE)
+        return True
+    except Exception:
+        return False
+
+
+def _mark_install_seen():
+    try:
+        os.makedirs(DATA_DIR, exist_ok=True)
+        with open(TELEMETRY_INSTALL_FILE, "x", encoding="utf-8") as f:
+            json.dump({"first_seen": int(time.time())}, f, indent=2)
+    except FileExistsError:
+        pass
+    except Exception:
+        pass
+
+
+def _telemetry_os_name():
+    name = platform.system() or sys.platform
+    return "macOS" if name == "Darwin" else name
+
+
+def _send_new_user_telemetry(share_os):
+    content = "New Rigby Launcher user"
+    if share_os:
+        content += "\nOS: " + _telemetry_os_name()
+    try:
+        import requests
+        resp = requests.post(
+            TELEMETRY_URL,
+            json={"content": content},
+            headers={"User-Agent": "RigbyLauncher/telemetry"},
+            timeout=(5, 10),
+        )
+        if 200 <= resp.status_code < 300:
+            _write_telemetry_state({"new_user": "sent", "share_os": bool(share_os),
+                                    "sent_at": int(time.time())})
+            log("telemetry: new-user event sent")
+        else:
+            _write_telemetry_state({"new_user": "failed", "share_os": bool(share_os),
+                                    "status": resp.status_code,
+                                    "attempted_at": int(time.time())})
+            log("telemetry: new-user event rejected (%s)" % resp.status_code)
+    except Exception as e:
+        _write_telemetry_state({"new_user": "failed", "share_os": bool(share_os),
+                                "attempted_at": int(time.time())})
+        log("telemetry: new-user event failed: " + str(e)[:200])
+
+
+def telemetry_pending():
+    return _telemetry_pending
+
+
+def init_telemetry():
+    global _telemetry_pending
+    with _telemetry_lock:
+        if os.path.exists(TELEMETRY_FILE):
+            return
+        disabled = os.environ.get("RIGBY_TELEMETRY_DISABLE", "").strip().lower()
+        if not TELEMETRY_URL or disabled in ("1", "true", "yes", "on"):
+            _claim_telemetry_state({"new_user": "disabled"})
+            return
+        if os.path.exists(TELEMETRY_INSTALL_FILE):
+            _telemetry_pending = True
+            return
+        if _SETTINGS_EXISTED:
+            _claim_telemetry_state({"new_user": "skipped_existing"})
+            return
+        _mark_install_seen()
+        _telemetry_pending = True
+
+
+def submit_telemetry_choice(share_os):
+    global _telemetry_pending
+    with _telemetry_lock:
+        if not _telemetry_pending:
+            return {"ok": True, "sent": False}
+        if not _claim_telemetry_state({"new_user": "sending", "share_os": bool(share_os),
+                                       "attempted_at": int(time.time())}):
+            _telemetry_pending = False
+            return {"ok": True, "sent": False}
+        _telemetry_pending = False
+    threading.Thread(target=_send_new_user_telemetry, args=(bool(share_os),), daemon=True).start()
+    return {"ok": True, "sent": True}
 
 
 def _proc_text(pid, name, limit=2_000_000):
@@ -952,6 +1067,7 @@ class APIHandler(BaseHTTPRequestHandler):
                 "versions": list(RELEASES.keys()),
                 "catalog": {"loaded": catalog_status().get("loaded", False),
                             "source": catalog_status().get("source", "builtin")},
+                "telemetry_prompt": telemetry_pending(),
             })
 
         elif path == "/api/versions":
@@ -1069,6 +1185,9 @@ class APIHandler(BaseHTTPRequestHandler):
                     settings[k] = v
             save_settings(settings)
             self._send_json({"ok": True, "settings": settings})
+
+        elif parsed.path == "/api/telemetry":
+            self._send_json(submit_telemetry_choice(data.get("share_os") is True))
 
         elif parsed.path == "/api/versions":
             version = data.get("version", selected_version)

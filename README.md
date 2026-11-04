@@ -30,6 +30,18 @@ also join our discord server
 - Resource watchdog for low end devices
 - Smooth animations
 
+## Privacy
+
+Rigby Launcher sends one anonymous install event when a new installation
+starts. The event only says that a new installation started; it does not
+include account, game, settings, mod, or persistent identifier data.
+
+On first launch, a prompt lets you choose whether to include your operating
+system family (for example, Windows or Linux) with that event. Choosing
+**Install count only** sends the event without the OS field. The event is sent
+at most once per installation; existing installations are not counted as new
+users. See [PRIVACY.md](PRIVACY.md) for the full policy.
+
 ## Adding versions, mods, and changelogs
 
 Edit `catalog.json` in the repo; no code changes are needed. The launcher
@@ -60,7 +72,7 @@ makepkg -si
 > On a Wayland-only session `makepkg -si` can fail because WebKit2GTK needs an X
 > display at build time. Install `xwayland` (or use an X11 session) and make sure
 > `base-devel`, `webkit2gtk-4.1` and `gtk3` are installed first. A pre-built
-> `rigby-launcher-0.8-1-any.pkg.tar.zst` is also published if building fails.
+> `rigby-launcher-0.8-2-any.pkg.tar.zst` is also published if building fails.
 
 #### Debian/Ubuntu (.deb)
 

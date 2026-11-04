@@ -775,6 +775,21 @@ html { scrollbar-width: none; }
               <div class="config-label">Wine Binary</div>
               <input class="config-input" type="text" id="set-wine-bin" placeholder="wine" onblur="saveSettings()">
             </div>
+
+            <div class="config-inline" style="border-top:1px solid var(--element-border);padding-top:12px">
+              <div>
+                <div style="font-size:14px;font-weight:500">Anonymous install event</div>
+                <div style="font-size:12px;color:var(--placeholder);margin-top:2px">Sent once; you choose whether to include your OS on first launch</div>
+              </div>
+            </div>
+
+            <div class="config-inline" style="border-top:1px solid var(--element-border);padding-top:12px">
+              <div>
+                <div style="font-size:14px;font-weight:500">Privacy Policy</div>
+                <div style="font-size:12px;color:var(--placeholder);margin-top:2px">See what is sent and how to opt out</div>
+              </div>
+              <button class="cfg-btn" onclick="showPrivacyPolicy()">Read</button>
+            </div>
           </div>
         </div>
       </div>
@@ -796,6 +811,7 @@ html { scrollbar-width: none; }
       <div class="cl-item">Launches are verified against the real Among Us process</div>
       <div class="cl-item">Failed launches show an error code, likely causes, and a log</div>
       <div class="cl-item">Smaller popups with clearer error text</div>
+      <div class="cl-item">One-time anonymous install event; OS sharing is optional</div>
     </div>
     <div class="cl-entry">
       <div class="cl-ver">v0.7</div>
@@ -1144,6 +1160,61 @@ function $(id) { return document.getElementById(id); }
 
 let dialogState = { onConfirm: null, onDismiss: null };
 
+const PRIVACY_TEXT = [
+  'Rigby Launcher privacy policy',
+  '',
+  'What is sent',
+  'On the first launch of a new installation, one anonymous install event is sent. It only says that a new installation started. If you choose Share OS, it also includes your operating system family (for example Windows or Linux). No account, game, settings, mods, or persistent identifier is included.',
+  '',
+  'Your choice',
+  'The startup prompt lets you share your OS or send the install count only. The install event is sent once either way; failed attempts are not retried.',
+  '',
+  'How it is sent',
+  'The event goes through a proxy to a private Discord webhook. As with any web request, the proxy and Discord may process standard metadata such as IP address and time; the launcher does not add those fields.',
+  '',
+  'How often',
+  'At most once per installation. Local markers prevent repeats and rate limiting. Existing installations are not counted as new users.',
+  '',
+  'Full policy: github.com/pileton/rigby-launcher/blob/main/PRIVACY.md'
+].join(String.fromCharCode(10));
+
+const TELEMETRY_PROMPT_TEXT = [
+  'Rigby Launcher sends one anonymous install event on first launch. It never includes your account, game data, or a persistent identifier.',
+  '',
+  'Share your OS family too? Choose Install count only to send the event without it.'
+].join(String.fromCharCode(10));
+
+let telemetryPromptShown = false;
+
+function showTelemetryPrompt() {
+  if (telemetryPromptShown) return;
+  telemetryPromptShown = true;
+  showDialog({
+    title: 'Anonymous install event',
+    desc: TELEMETRY_PROMPT_TEXT,
+    yes: 'Share OS',
+    no: 'Install count only',
+    variant: 'info',
+    tall: true,
+    onConfirm: function() { sendTelemetryChoice(true); },
+    onDismiss: function() { sendTelemetryChoice(false); }
+  });
+}
+
+async function sendTelemetryChoice(shareOs) {
+  try {
+    await fetch('/api/telemetry', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ share_os: shareOs })
+    });
+  } catch(e) {}
+}
+
+function showPrivacyPolicy() {
+  showDialog({ title: 'Privacy Policy', desc: PRIVACY_TEXT, yes: 'Close', variant: 'info', tall: true });
+}
+
 function showDialog(opts) {
   opts = opts || {};
   $('dlg-title').textContent = opts.title || 'Confirm ?';
@@ -1159,7 +1230,7 @@ function showDialog(opts) {
     $('dlg-actions').classList.add('single');
   }
   $('dlg').classList.toggle('info', opts.variant === 'info');
-  const tall = opts.variant === 'danger';
+  const tall = opts.variant === 'danger' || opts.tall === true;
   $('dlg').classList.toggle('tall', tall);
   const desc = $('dlg-desc');
   desc.style.fontSize = '';
@@ -1382,6 +1453,7 @@ async function checkGameStatus() {
   try {
     const r = await fetch('/api/status');
     state = await r.json();
+    if (state.telemetry_prompt) showTelemetryPrompt();
     if (state.settings?.theme) {
       document.documentElement.classList.remove('white', 'red', 'blue');
       if (state.settings.theme === 'white') document.documentElement.classList.add('white');

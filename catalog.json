@@ -56,7 +56,8 @@
         "New versions, mods, and changelogs now load from the repo catalog",
         "Launches are verified against the real Among Us process",
         "Failed launches show an error code, likely causes, and a log",
-        "Smaller popups with clearer error text"
+        "Smaller popups with clearer error text",
+        "One-time anonymous install event; OS sharing is optional"
       ]
     },
     {
